@@ -6,7 +6,8 @@ const MCACHE = "thien-music-__MUSIC_VERSION__";  // background music: cached on 
 const CFG = "thien-config";                      // small cache used as a key/value store (reminder settings)
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: "reload" — never take files from the browser's HTTP cache, or a new version could be stored with old JS
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
   e.waitUntil((async () => {
@@ -30,9 +31,13 @@ const saving = new Set();
 self.addEventListener("fetch", e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== location.origin) return;
-  if (req.mode === "navigate") {                 // pages: network first (get updates), cache when offline
-    e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put("./index.html", c)); return r; })
-      .catch(() => caches.match("./index.html")));
+  if (req.mode === "navigate") {
+    // The page always comes from this version's own cache, so HTML and JS are always the same version
+    // (a fresh page with old cached JS broke the Play button). Updates arrive via a new sw.js, then the page reloads once.
+    e.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      return (await c.match("./")) || (await c.match("./index.html")) || fetch(req);
+    })());
     return;
   }
   if (url.pathname.includes("/audio/music/")) {   // stream from network the first time, save the whole file for next time
@@ -46,7 +51,7 @@ self.addEventListener("fetch", e => {
     return;
   }
   e.respondWith((async () => {
-    const cached = await caches.match(req.url.split("#")[0], { ignoreSearch: true });
+    const cached = await (await caches.open(CACHE)).match(req.url.split("#")[0], { ignoreSearch: true });
     if (cached) return req.headers.has("range") ? rangeResponse(req, cached) : cached;
     const r = await fetch(req);
     if (r.ok && r.status === 200) { const c = r.clone(); caches.open(CACHE).then(x => x.put(req.url, c)); }

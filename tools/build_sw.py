@@ -3,6 +3,15 @@ import os, json, hashlib
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(root)
 skip_dirs = {"tools", "samples", ".github", ".git"}
+# Stamp each script/stylesheet URL in index.html with its content hash (app.js?v=…), so a fresh page can never
+# pick up an older copy of a script from the browser's HTTP cache or from an old service-worker cache.
+import re
+html = open("index.html", encoding="utf-8").read()
+def stamp(m):
+    f = m.group(2); v = hashlib.sha256(open(f, "rb").read()).hexdigest()[:8]
+    return f'{m.group(1)}="{f}?v={v}"'
+html2 = re.sub(r'(src|href)="((?:affirmations|music|config|app|pwa)\.js|style\.css)(?:\?v=[0-9a-f]+)?"', stamp, html)
+if html2 != html: open("index.html", "w", encoding="utf-8").write(html2)
 assets = ["./"]
 h = hashlib.sha256(); hm = hashlib.sha256()   # music is cached lazily (on first play), in its own cache
 for dp, dns, fns in os.walk("."):

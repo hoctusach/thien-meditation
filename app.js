@@ -46,7 +46,7 @@
   });
   seg("durSeg", "dur", () => { state.goalNoted = state.dur > 0 && state.elapsed >= state.dur * 60; showTime(); try { localStorage.setItem("thien.dur.v2", state.dur); } catch (e) {} });
   // duration: default is unlimited; new storage key so everyone starts on "Không giới hạn" once
-  try { const d = localStorage.getItem("thien.dur.v2"); if (d !== null) { state.dur = Number(d); document.querySelectorAll("#durSeg button").forEach(b => b.classList.toggle("on", Number(b.dataset.v) === state.dur)); } } catch (e) {}
+  try { const d = localStorage.getItem("thien.dur.v2"); if (d !== null && [0, 5, 10, 15, 20].includes(Number(d))) { state.dur = Number(d); document.querySelectorAll("#durSeg button").forEach(b => b.classList.toggle("on", Number(b.dataset.v) === state.dur)); } } catch (e) {}
   seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } });
     $("shuffle").onchange = () => { makeOrder(); state.idx = 0; };
   seg("gapSeg", "gap");
@@ -145,7 +145,7 @@
   }
   $("breath").onchange = breathe;
   seg("breathSeg", "breathPat", () => { state.breathPat = String(state.breathPat); try { localStorage.setItem("thien.breath", state.breathPat); } catch (e) {} if (state.playing) breathe(); });
-  try { const bp = localStorage.getItem("thien.breath"); if (bp) { state.breathPat = bp; document.querySelectorAll("#breathSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === bp)); } } catch (e) {}
+  try { const bp = localStorage.getItem("thien.breath"); if (bp === "478" || bp === "426") { state.breathPat = bp; document.querySelectorAll("#breathSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === bp)); } } catch (e) {}
 
   // ---------- timer ----------
   let tick;
@@ -182,18 +182,20 @@
     const k = ITEMS.indexOf(it);
     document.querySelectorAll("#allLines li").forEach((li, i) => li.classList.toggle("cur", i === k));
   }
+  // The bell has 3 strikes (0 s, 10 s, 20 s); speech waits until the last strike has rung out a little.
+  const BELL_CLEAR_MS = 23000;
   // the pause after each quote; returns false if interrupted, "done" if the session should finish
   async function pauseAfter(tok) {
-    const end = Date.now() + state.gap * 1000;
+    let end = Date.now() + state.gap * 1000;
     while (Date.now() < end) {
       if (!await wait(Math.min(1000, end - Date.now()), tok)) return false;
       const left = end - Date.now();
       if (state.dur && state.elapsed >= state.dur * 60 && !state.goalNoted) {
         state.goalNoted = true;
         if (!$("keepGoing").checked) return "done";
-        if (state.bell !== 0 && left > 6000) music.bell();        // gentle "goal reached" chime, then keep going
+        if (state.bell !== 0 && left > 6000) { music.bell(); end = Math.max(end, Date.now() + BELL_CLEAR_MS); }   // "goal reached", then keep going
       } else if (state.bell > 0 && left > 6000 && Date.now() - state.lastBell >= state.bell * 60000) {
-        music.bell();                                              // only ever inside the pause, never over speech
+        music.bell(); end = Math.max(end, Date.now() + BELL_CLEAR_MS);   // only inside a pause; the pause stretches so no speech is over the bell
       }
     }
     return true;
@@ -201,7 +203,7 @@
   async function runLoop() {
     const tok = ++state.token;
     voiceEl.pause();
-    if (state.bell !== 0 && state.freshStart) { state.freshStart = false; music.bell(); if (!await wait(5000, tok)) return; }
+    if (state.bell !== 0 && state.freshStart && !state.quietStart) { state.freshStart = false; music.bell(); if (!await wait(BELL_CLEAR_MS, tok)) return; }
     else await wait(1200, tok);
     while (state.playing && tok === state.token) {
       if (!state.order.length) makeOrder();
@@ -218,8 +220,9 @@
       if (r === "done") { finish(); return; }
     }
   }
-  function start() {
+  function start(opts = {}) {
     initAudio(); ctx.resume();
+    state.quietStart = !!opts.quietStart;            // started right after the reminder's own bell: don't ring again
     state.playing = true; $("playBtn").textContent = "❚❚";
     state.freshStart = !state.session;
     if (!state.session) { state.session = { start: Date.now(), sec: 0 }; state.elapsed = 0; state.goalNoted = false; }
@@ -230,7 +233,7 @@
     playlist.resume();                                // tracks play in full, then crossfade (auto: next one · repeat: same one)
     clearInterval(tick);
     tick = setInterval(() => { if (!state.playing) return; state.elapsed++; state.session.sec++; saveCurrent(); showTime(); }, 1000);
-    breathe(); runLoop();
+    breathe(); runLoop(); state.quietStart = false;
     if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then(l => state.lock = l).catch(() => {});
   }
   function stop(finished) {
@@ -250,12 +253,12 @@
   }
   function finish() { commitSession(); stop(true); $("stopBtn").hidden = true; }
   $("playBtn").onclick = () => state.playing ? stop(false) : start();
-  window.THIEN = { start: () => { if (!state.playing) start(); }, isPlaying: () => state.playing, get playlist() { return playlist; } };
+  window.THIEN = { start: o => { if (!state.playing) start(o); }, isPlaying: () => state.playing, get playlist() { return playlist; } };
   $("stopBtn").onclick = () => { if (state.session) finish(); };
 
   // ---------- meditation log (localStorage) ----------
   const LOG = "thien.log.v1", CUR = "thien.current.v1", MIN_SEC = 15;
-  const readLog = () => { try { return JSON.parse(localStorage.getItem(LOG)) || []; } catch (e) { return []; } };
+  const readLog = () => { try { const l = JSON.parse(localStorage.getItem(LOG)); return Array.isArray(l) ? l.filter(e => e && e.start > 0 && e.sec >= 0) : []; } catch (e) { return []; } };
   const writeLog = l => { try { localStorage.setItem(LOG, JSON.stringify(l)); } catch (e) {} };
   function saveCurrent() { try { if (state.session) localStorage.setItem(CUR, JSON.stringify({ ...state.session, end: Date.now() })); } catch (e) {} }
   function pushEntry(s) { if (!s || s.sec < MIN_SEC) return; const l = readLog(); l.push({ start: s.start, end: s.end || Date.now(), sec: s.sec }); writeLog(l); }
@@ -292,5 +295,5 @@
   }
   $("clearLog").onclick = () => { if (confirm("Xoá toàn bộ nhật ký thiền? / Clear the whole log?")) { writeLog([]); renderLog(); } };
   renderLog();
-  document.addEventListener("keydown", e => { if (e.code === "Space" && e.target.tagName !== "INPUT") { e.preventDefault(); $("playBtn").click(); } });
+  document.addEventListener("keydown", e => { if (e.code === "Space" && !/^(INPUT|SELECT|TEXTAREA|BUTTON|SUMMARY|A)$/.test(e.target.tagName)) { e.preventDefault(); $("playBtn").click(); } });
 })();

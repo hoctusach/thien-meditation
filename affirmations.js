@@ -41,6 +41,11 @@ window.AFFIRMATIONS = [
   "group": "Sung túc"
  },
  {
+  "vi": "Chỉ quan sát. Cảm giác trồi lên, rồi lặng xuống.",
+  "en": "Just observe. Sensations rise, then fall away.",
+  "group": "Quan sát"
+ },
+ {
   "vi": "Sung túc là trạng thái tự nhiên của tôi.",
   "en": "Abundance is my natural state.",
   "group": "Sung túc"
@@ -54,6 +59,11 @@ window.AFFIRMATIONS = [
   "vi": "Vũ trụ luôn chu cấp đầy đủ cho tôi.",
   "en": "The universe always provides for me.",
   "group": "Sung túc"
+ },
+ {
+  "vi": "Như sóng trên mặt biển, đến rồi đi, mặt biển vẫn bình yên.",
+  "en": "Like waves on the sea, they come and go; the sea stays at peace.",
+  "group": "Quan sát"
  },
  {
   "vi": "Tôi đón nhận tài lộc từ những nguồn quen thuộc và cả những nguồn bất ngờ.",
@@ -76,6 +86,11 @@ window.AFFIRMATIONS = [
   "group": "Biết ơn"
  },
  {
+  "vi": "Không giữ lại, không đẩy đi, chỉ nhìn thấy.",
+  "en": "Not holding on, not pushing away, only seeing.",
+  "group": "Quan sát"
+ },
+ {
   "vi": "Ngày của tôi bắt đầu và kết thúc bằng lòng biết ơn.",
   "en": "My day begins and ends with gratitude.",
   "group": "Biết ơn"
@@ -89,6 +104,11 @@ window.AFFIRMATIONS = [
   "vi": "Lòng biết ơn mở ra cánh cửa cho thêm nhiều phước lành.",
   "en": "Gratitude opens the door to more blessings.",
   "group": "Biết ơn"
+ },
+ {
+  "vi": "Hơi thở vào, hơi thở ra, có mặt trọn vẹn ở đây.",
+  "en": "Breath in, breath out, fully present here.",
+  "group": "Quan sát"
  },
  {
   "vi": "Tôi cảm ơn cơ thể mình đã luôn yêu thương và nâng đỡ tôi.",
@@ -106,6 +126,11 @@ window.AFFIRMATIONS = [
   "group": "Yêu thương bản thân"
  },
  {
+  "vi": "Cảm giác này cũng vô thường, rồi cũng sẽ qua.",
+  "en": "This sensation too is impermanent; it too will pass.",
+  "group": "Quan sát"
+ },
+ {
   "vi": "Tôi đủ đầy, ngay lúc này, đúng như tôi đang là.",
   "en": "I am enough, right now, just as I am.",
   "group": "Yêu thương bản thân"
@@ -119,6 +144,11 @@ window.AFFIRMATIONS = [
   "vi": "Tôi buông bỏ những gì không còn phục vụ tôi.",
   "en": "I release what no longer serves me.",
   "group": "Yêu thương bản thân"
+ },
+ {
+  "vi": "Không có ai cần làm gì, chỉ có sự nhận biết.",
+  "en": "No one needs to do anything; there is only awareness.",
+  "group": "Quan sát"
  },
  {
   "vi": "Tôi tha thứ cho bản thân và cho người khác.",
@@ -136,6 +166,11 @@ window.AFFIRMATIONS = [
   "group": "Bình an"
  },
  {
+  "vi": "Càng buông cái tôi, lòng càng nhẹ nhàng, thanh thản.",
+  "en": "The more the self is released, the lighter and calmer the heart.",
+  "group": "Quan sát"
+ },
+ {
   "vi": "Mọi sự đều ổn trong thế giới của tôi.",
   "en": "All is well in my world.",
   "group": "Bình an"
@@ -149,6 +184,11 @@ window.AFFIRMATIONS = [
   "vi": "Tôi an toàn và được che chở.",
   "en": "I am safe and protected.",
   "group": "Bình an"
+ },
+ {
+  "vi": "Suy nghĩ như mây trôi qua bầu trời, bầu trời vẫn rộng mở.",
+  "en": "Thoughts drift like clouds across the sky; the sky stays wide open.",
+  "group": "Quan sát"
  },
  {
   "vi": "Mọi chuyện đang diễn ra vì điều tốt đẹp nhất cho tôi.",
@@ -171,6 +211,11 @@ window.AFFIRMATIONS = [
   "group": "Kiến tạo"
  },
  {
+  "vi": "Bình thản trước dễ chịu, bình thản trước khó chịu.",
+  "en": "Equanimity with the pleasant, equanimity with the unpleasant.",
+  "group": "Quan sát"
+ },
+ {
   "vi": "Những ước mơ của tôi đang trở thành hiện thực.",
   "en": "My dreams are becoming reality.",
   "group": "Kiến tạo"
@@ -184,6 +229,11 @@ window.AFFIRMATIONS = [
   "vi": "Tôi tin tưởng vào thời điểm hoàn hảo của vũ trụ.",
   "en": "I trust the perfect timing of the universe.",
   "group": "Kiến tạo"
+ },
+ {
+  "vi": "Lặng yên, sáng suốt, như người đứng bên bờ nhìn sóng.",
+  "en": "Still and clear, like one standing on the shore watching the waves.",
+  "group": "Quan sát"
  },
  {
   "vi": "Điều tôi tìm kiếm cũng đang tìm kiếm tôi.",

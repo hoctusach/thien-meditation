@@ -40,13 +40,23 @@
     sel.value = v;
   }
   sel.onchange = () => setThemeMode(sel.value);
-  setThemeMode(store.get("thien.theme", "auto"), true);
+  const savedTheme = String(store.get("thien.theme", "auto"));
+  setThemeMode(savedTheme === "auto" || THEMES[Number(savedTheme)] ? savedTheme : "auto", true);   // ignore stale/unknown values
 
   // ---------- service worker (offline + notifications) ----------
   let swReg = null;
   const swReady = ("serviceWorker" in navigator)
     ? navigator.serviceWorker.register("sw.js").then(r => (swReg = r, navigator.serviceWorker.ready)).catch(e => { console.warn("SW", e); return null; })
     : Promise.resolve(null);
+  // A new version took over: reload once so page, scripts and styles all come from the same version
+  // (not in the middle of a session — then the new version is used next time the app opens).
+  if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+    let reloading = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloading || (window.THIEN && THIEN.isPlaying())) return;
+      reloading = true; location.reload();
+    });
+  }
   if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.type === "reminder-click") ring(true); });
 
   // ---------- install ----------
@@ -130,6 +140,7 @@
 
   // ---------- daily reminder ----------
   const R = Object.assign({ on: false, time: "06:30", lastRung: "" }, store.get("thien.reminder", {}));
+  if (typeof R.time !== "string" || !/^\d{1,2}:\d{2}$/.test(R.time)) R.time = "06:30"; R.on = !!R.on;
   $("remTime").value = R.time; $("remOn").checked = R.on;
   const todayKey = () => new Date().toDateString();
   const dueToday = () => { const [h, m] = R.time.split(":").map(Number), d = new Date(); d.setHours(h, m, 0, 0); return d; };
@@ -145,16 +156,16 @@
     R.lastRung = todayKey(); save();
     $("reminderBanner").hidden = false; bellPlayed = false;
     if (!(window.THIEN && THIEN.isPlaying())) playBell();         // may be blocked until the first tap; the banner button plays it then
-    if (document.hidden && Notification && Notification.permission === "granted") swReady.then(reg => reg && reg.showNotification("🪷 Đến giờ thiền rồi", { body: "Dành vài phút hít thở nhé. 🔔", icon: "icons/icon-192.png", badge: "icons/badge-96.png", tag: "daily-reminder", data: { url: "./?reminder=1" } }));
+    if (document.hidden && "Notification" in window && Notification.permission === "granted") swReady.then(reg => reg && reg.showNotification("🪷 Đến giờ thiền rồi", { body: "Dành vài phút hít thở nhé. 🔔", icon: "icons/icon-192.png", badge: "icons/badge-96.png", tag: "daily-reminder", data: { url: "./?reminder=1" } }));
   }
   $("bannerClose").onclick = () => { $("reminderBanner").hidden = true; bellAudio.pause(); };
   $("bannerStart").onclick = () => {
     $("reminderBanner").hidden = true;
-    if (!bellPlayed) {   // 5 slow strikes; begin as the last one starts to fade (no need to wait for full silence)
-      let go = () => { go = null; bellAudio.onended = bellAudio.ontimeupdate = null; window.THIEN && THIEN.start(); };
+    if (!bellPlayed) {   // the bell's 3 slow strikes; begin as the last one starts to fade
+      let go = () => { go = null; bellAudio.onended = bellAudio.ontimeupdate = null; window.THIEN && THIEN.start({ quietStart: true }); };
       playBell(); bellAudio.onended = () => go && go();
       bellAudio.ontimeupdate = () => { if (go && bellAudio.duration && bellAudio.currentTime > bellAudio.duration - 8) go(); };
-    }   // 5 slow strikes, then begin
+    }
     else { bellAudio.pause(); window.THIEN && THIEN.start(); }
   };
   $("remTest").onclick = () => { bellAudio.paused ? playBell() : bellAudio.pause(); };

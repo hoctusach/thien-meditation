@@ -2,6 +2,7 @@
 VI: VieNeu-TTS v3 Turbo, preset "Thục Đoan" (Nữ · miền Nam) -> kiểm tra Whisper, tạo lại nếu đọc chưa rõ.
 EN: edge-tts en-US-AvaNeural, rate -15%.
 Usage: /workspace/vnv/bin/python tools/build_voice.py [vi|en|all]
+       ONLY=9,13 ... -> only (re)make those line numbers (1-based); all other files are left untouched.
 """
 import json, subprocess, sys, asyncio, difflib, os
 import numpy as np
@@ -10,6 +11,8 @@ EN_VOICE, EN_RATE, EN_PITCH, EN_TEMPO = "en-US-AvaNeural", "-15%", "-2Hz", 1
 SOFT = "apad=pad_dur=0.3,loudnorm=I=-18:TP=-2"   # v1 settings (giọng gốc, không xử lý thêm)
 A = json.load(open("affirmations.json"))
 TMP = "/tmp/medvoice"; os.makedirs(TMP, exist_ok=True)
+ONLY = {int(x) for x in os.environ.get("ONLY", "").split(",") if x.strip()}
+todo = lambda i: not ONLY or (i + 1) in ONLY
 
 def post(src, dst, tempo):
     st = f"atempo={tempo}," if tempo != 1 else ""
@@ -25,6 +28,7 @@ def build_en():
     import edge_tts
     async def run():
         for i, a in enumerate(A):
+            if not todo(i): continue
             raw = f"{TMP}/en_{i+1:02d}.mp3"
             await edge_tts.Communicate(a["en"], EN_VOICE, rate=EN_RATE, pitch=EN_PITCH).save(raw)
             post(raw, f"audio/en_{i+1:02d}.mp3", EN_TEMPO)
@@ -39,6 +43,7 @@ def build_vi():
         return difflib.SequenceMatcher(None, norm(ref), norm(t)).ratio(), t
     report = []
     for i, a in enumerate(A):
+        if not todo(i): continue
         n = f"{i+1:02d}"; best = None
         for k in range(6):
             w, mp = f"{TMP}/vi_{n}_{k}.wav", f"{TMP}/vi_{n}_{k}.mp3"

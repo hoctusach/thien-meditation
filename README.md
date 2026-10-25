@@ -4,13 +4,13 @@ Thiền để thay đổi tần số · Meditate to shift your frequency.
 
 Trang web tĩnh (HTML/CSS/JS, không cần build).
 
-- `affirmations.json` / `affirmations.js` — 40 câu (VI + EN). Sửa JSON rồi chạy `tools/build_audio.sh`.
+- `affirmations.json` / `affirmations.js` — 50 câu (VI + EN; 10 câu “Quan sát” xen đều trong danh sách). Sửa JSON rồi chạy `tools/build_audio.sh`.
 - `audio/vi_XX.mp3` — VieNeu-TTS v3 Turbo, preset “Thục Đoan” (Nữ · miền Nam), tempo 0.86.
 - `audio/en_XX.mp3` — Microsoft Edge neural TTS en-US-AvaNeural, rate −15%.
 - `samples/` — mẫu 3 giọng nữ miền Nam.
 - Nhạc nền (`music.js`): **6 bản nhạc không lời thật** (public domain / CC0 / CC BY), phát lần lượt từng bài trọn vẹn rồi chuyển bài êm (crossfade 6s); chế độ “Lặp 1 bài”. Có ‹ › và menu chọn bài; khi chưa bắt đầu thiền, đổi bài sẽ phát thử 20s. Nhạc tự giảm nhẹ (~3 dB) khi giọng đọc. Xem mục “Nhạc nền” bên dưới.
 - Chuông: tiếng chuông nhỏ, ngắn (~3s), tổng hợp bằng Web Audio; mặc định **mỗi 5 phút** (chỉ reo trong khoảng lặng, không đè lên giọng đọc), có thể Tắt / 3' / chỉ đầu-cuối.
-- Mỗi câu Việt và mỗi câu Anh là một câu riêng (80 câu), sau mỗi câu là khoảng lặng 12s / 40s / 60s / 2' / 5' (mặc định 12s).
+- Mỗi câu Việt và mỗi câu Anh là một câu riêng (100 câu), sau mỗi câu là khoảng lặng 12s / 40s / 60s / 2' / 5' (mặc định 12s).
 - Hẹn giờ mặc định 10 phút; hết giờ vẫn tự chạy tiếp (đồng hồ hiện `10:00 +m:ss`) cho đến khi bấm ■ Kết thúc. Bỏ chọn “Hết giờ vẫn chạy tiếp” để dừng đúng giờ.
 - Nhật ký thiền: lưu trong localStorage của trình duyệt (khoá `thien.log.v1`), chỉ tính thời gian đang phát.
 
@@ -25,7 +25,7 @@ Trang web tĩnh (HTML/CSS/JS, không cần build).
 
 ## Nhắc nhở hằng ngày
 Trong app: “⏰ Nhắc nhở hằng ngày” → chọn giờ → bật. Có 4 lớp:
-1. **Mở app sau giờ nhắc** → hiện “Đến giờ thiền rồi” + 5 hồi chuông chậm (`audio/bell5.mp3`, ~46s; bài thiền bắt đầu khi hồi cuối đang ngân). Luôn hoạt động.
+1. **Mở app sau giờ nhắc** → hiện “Đến giờ thiền rồi” + 3 hồi “Chuông thiền” (`audio/bell5.mp3`, ~34s; bài thiền bắt đầu khi hồi cuối đang ngân). Luôn hoạt động.
 2. **📅 Thêm vào lịch** → file `.ics` lặp lại mỗi ngày có báo thức — cách chắc chắn nhất, dùng âm báo của lịch.
 3. **Nhắc nền Android** (Periodic Background Sync, chỉ khi đã cài app trên Chrome Android) — trình duyệt tự quyết định lúc chạy, không đúng giờ.
 4. **Thông báo đẩy (Web Push) miễn phí qua GitHub Actions** — `.github/workflows/daily-reminder.yml` chạy mỗi 10 phút và gửi thông báo cho những ai đã đến giờ.
@@ -35,7 +35,7 @@ Trong app: “⏰ Nhắc nhở hằng ngày” → chọn giờ → bật. Có 4
      - `PUSH_SUBSCRIPTIONS` = `[ mã1, mã2 ]` — mỗi mã lấy từ nút “📋 Sao chép mã thông báo” trong app (sau khi bật nhắc nhở và cho phép thông báo). Đổi giờ nhắc → sửa `"time"` trong secret (hoặc sao chép mã mới).
    - Actions tab → bật workflows nếu được hỏi → “Daily meditation reminder” → **Run workflow** để gửi thử.
    - Giới hạn: GitHub chạy lịch “cố gắng hết sức” (thường trễ 5–30 phút); repo public không có hoạt động 60 ngày sẽ bị tắt lịch — workflow có job keepalive hằng tuần tự commit mỗi 30 ngày.
-   - Thông báo dùng âm thanh mặc định của hệ thống (web không thể đặt âm chuông riêng); bấm vào thông báo sẽ mở app và reo 5 hồi chuông.
+   - Thông báo dùng âm thanh mặc định của hệ thống (web không thể đặt âm chuông riêng); bấm vào thông báo sẽ mở app và reo 3 hồi chuông.
 
 ## Nhạc nền
 File trong `audio/music/` (MP3 112 kbps stereo, chuẩn hoá −24 LUFS, nén động nhẹ, ~17 MB tổng, ~20 phút). Tạo lại bằng `python3 tools/build_music.py` (tải từ Wikimedia Commons; `SAMPLES=1` để tạo thêm đoạn nghe thử 25s trong `samples/music/`). Service worker **không** tải trước nhạc: mỗi bài được lưu vào cache riêng (`thien-music-…`) lần đầu phát, sau đó nghe offline được.
@@ -65,3 +65,9 @@ Mỗi chuông có `audio/bells/<id>.mp3` (1 hồi) và `<id>-x5.mp3` (5 hồi ch
 Thời gian mặc định: **Không giới hạn** (đồng hồ đếm lên từ 00:00).
 
 > **Cập nhật 26/10/2026:** app chỉ còn 1 chuông cố định là "Chuông thiền" 3 hồi (`audio/bells/thien.mp3` = `audio/bell5.mp3`, bản `samples/bells/1-chuong-thien-3-hoi.mp3` đã duyệt), không còn phần chọn chuông. Các chuông khác và bản x5 đã bỏ.
+
+## Cập nhật bộ nhớ đệm (service worker)
+- `tools/build_sw.py` gắn mã phiên bản vào `app.js?v=…`, `style.css?v=…` trong `index.html` và tạo `sw.js`. Luôn chạy lại sau mỗi lần sửa.
+- Service worker tải trước toàn bộ file **thẳng từ mạng** (`cache: "reload"`), trang và script luôn cùng một phiên bản; khi có bản mới, trang tự tải lại 1 lần (không khi đang thiền).
+- Nếu một bản cũ trong bộ nhớ đệm làm app không chạy, trang tự xoá bộ nhớ đệm cũ và tải lại 1 lần (tự chữa lỗi).
+- Chuông 3 hồi (~34s): khi chuông reo, câu đọc tiếp theo chờ đến sau hồi thứ 3 (~23s), không đọc đè lên chuông.
