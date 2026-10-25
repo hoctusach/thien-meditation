@@ -6,16 +6,28 @@
 <title>Thiền Sung Túc · Abundance Meditation</title>
 <meta name="description" content="Thiền với nhạc nhẹ và câu khẳng định song ngữ Việt – Anh.">
 <meta name="theme-color" content="#1b1736">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪷</text></svg>">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Thiền">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="bg" id="bgA"></div><div class="bg" id="bgB"></div>
 <div class="sky"><span></span><span></span><span></span></div>
 <main>
   <header>
     <h1>Thiền Sung Túc</h1>
     <p class="sub">Abundance · Gratitude · Peace</p>
   </header>
+  <div id="reminderBanner" class="banner" hidden>
+    <span>🔔 Đến giờ thiền rồi <small>Time to meditate</small></span>
+    <button id="bannerStart">Bắt đầu <small>Start</small></button>
+    <button id="bannerClose" class="x" aria-label="Đóng / Close">×</button>
+  </div>
 
   <section class="stage">
     <div class="orb-wrap">
@@ -96,6 +108,17 @@
         <button data-v="300">5'</button>
       </div>
     </div>
+    <div class="row">
+      <label>Giao diện <small>Theme</small></label>
+      <select id="themeSel" class="sel" aria-label="Giao diện / Theme"></select>
+    </div>
+    <div class="row">
+      <label>Nhịp thở <small>Breathing</small></label>
+      <div class="seg" id="breathSeg">
+        <button data-v="478" class="on">4-7-8 Zen</button>
+        <button data-v="426">4-2-6</button>
+      </div>
+    </div>
     <div class="row toggles">
       <label class="tg"><input type="checkbox" id="loop" checked> Lặp lại <small>Loop</small></label>
       <label class="tg"><input type="checkbox" id="shuffle"> Xáo trộn <small>Shuffle</small></label>
@@ -122,6 +145,40 @@
     <button id="clearLog" class="clear">🗑️ Xoá nhật ký <small>Clear log</small></button>
   </details>
 
+  <details class="list remind">
+    <summary>⏰ Nhắc nhở hằng ngày <small>Daily reminder</small></summary>
+    <div class="row">
+      <label for="remTime">Giờ nhắc <small>Time</small></label>
+      <input type="time" id="remTime" value="06:30" class="sel time">
+    </div>
+    <div class="row toggles">
+      <label class="tg"><input type="checkbox" id="remOn"> Bật nhắc nhở mỗi ngày <small>Remind me daily</small></label>
+    </div>
+    <p id="remStatus" class="muted small"></p>
+    <div class="btns">
+      <button id="remTest" class="pill">🔔 Nghe thử chuông <small>Test bell</small></button>
+      <button id="remIcs" class="pill">📅 Thêm vào lịch <small>Add to calendar</small></button>
+      <button id="remCopy" class="pill" hidden>📋 Sao chép mã thông báo <small>Copy push code</small></button>
+    </div>
+    <p class="muted small">
+      Khi đến giờ, app gửi thông báo (nếu điện thoại cho phép) và khi bạn mở app sẽ reo 5 hồi chuông chậm.
+      Cách chắc chắn nhất: bấm “Thêm vào lịch” — lịch điện thoại sẽ nhắc bạn mỗi ngày đúng giờ.
+    </p>
+  </details>
+
+  <details class="list install" id="installBox">
+    <summary>📲 Cài đặt app <small>Install app</small></summary>
+    <p class="muted small" id="installState"></p>
+    <button id="installBtn" class="pill" hidden>📲 Cài đặt app <small>Install</small></button>
+    <div id="iosHelp" class="muted small" hidden>
+      <b>iPhone / iPad (Safari):</b> bấm nút <b>Chia sẻ</b> <span aria-hidden="true">⬆️</span> ở dưới màn hình → chọn <b>“Thêm vào MH chính”</b> (Add to Home Screen) → <b>Thêm</b>.
+      Sau đó mở app từ biểu tượng 🪷 trên màn hình chính để bật thông báo.
+    </div>
+    <div id="andHelp" class="muted small">
+      <b>Android (Chrome):</b> bấm nút “Cài đặt app” ở trên, hoặc menu <b>⋮</b> → <b>“Cài đặt ứng dụng”</b> / “Thêm vào màn hình chính”.
+    </div>
+  </details>
+
   <footer>
     Giọng đọc AI: tiếng Việt <b>VieNeu-TTS</b> (giọng miền Nam “Thục Đoan”), English <b>Microsoft Edge neural (Ava)</b>.
     Nhạc nền (6 bài xoay vòng) và tiếng chuông được tạo trực tiếp trong trình duyệt (Web Audio).<br>
@@ -130,6 +187,8 @@
 </main>
 <script src="affirmations.js"></script>
 <script src="music.js"></script>
+<script src="config.js"></script>
 <script src="app.js"></script>
+<script src="pwa.js"></script>
 </body>
 </html>

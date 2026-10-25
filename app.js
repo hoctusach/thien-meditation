@@ -2,7 +2,7 @@
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
-  const state = { lang: "both", dur: 10, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, trackSec: 0, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
+  const state = { breathPat: "478", lang: "both", dur: 10, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, trackSec: 0, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
 
   // ---------- items: every VI line and every EN line is its own quote ----------
   const ITEMS = [];
@@ -105,13 +105,16 @@
     clearTimeout(breathTimer);
     const orb = $("orb"), t = $("breathText");
     if (!state.playing || !$("breath").checked) { orb.className = "orb"; orb.style.transitionDuration = "2s"; t.innerHTML = state.playing ? "" : "Sẵn sàng<small>Ready</small>"; return; }
-    const steps = [["in", 4, "Hít vào", "Breathe in"], ["hold", 2, "Giữ", "Hold"], ["out", 6, "Thở ra", "Breathe out"]];
+    const [i, h, o] = state.breathPat === "426" ? [4, 2, 6] : [4, 7, 8];   // default: 4-7-8 Zen breathing
+    const steps = [["in", i, "Hít vào", "Breathe in"], ["hold", h, "Giữ", "Hold"], ["out", o, "Thở ra", "Breathe out"]];
     let k = 0;
     const step = () => { if (!state.playing || !$("breath").checked) return breathe();
       const [c, s, vi, en] = steps[k % 3]; orb.style.transitionDuration = s + "s"; orb.className = "orb " + c; t.innerHTML = `${vi}<small>${en}</small>`; k++; breathTimer = setTimeout(step, s * 1000); };
     step();
   }
   $("breath").onchange = breathe;
+  seg("breathSeg", "breathPat", () => { state.breathPat = String(state.breathPat); try { localStorage.setItem("thien.breath", state.breathPat); } catch (e) {} if (state.playing) breathe(); });
+  try { const bp = localStorage.getItem("thien.breath"); if (bp) { state.breathPat = bp; document.querySelectorAll("#breathSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === bp)); } } catch (e) {}
 
   // ---------- timer ----------
   let tick;
@@ -214,6 +217,7 @@
   }
   function finish() { commitSession(); stop(true); $("stopBtn").hidden = true; }
   $("playBtn").onclick = () => state.playing ? stop(false) : start();
+  window.THIEN = { start: () => { if (!state.playing) start(); }, isPlaying: () => state.playing };
   $("stopBtn").onclick = () => { if (state.session) finish(); };
 
   // ---------- meditation log (localStorage) ----------

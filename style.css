@@ -82,3 +82,32 @@ details.panel[open]>summary{margin-bottom:6px}
 #allLines li[data-lang="en"]{color:var(--muted);font-style:italic}
 #allLines li.off{opacity:.35;cursor:default}
 #allLines li.cur{color:var(--gold)}
+
+/* ---------- themes (crossfading background layers) ---------- */
+@property --b1 { syntax: "<color>"; inherits: true; initial-value: #e7a6c8; }
+@property --b2 { syntax: "<color>"; inherits: true; initial-value: #7fb6e8; }
+@property --b3 { syntax: "<color>"; inherits: true; initial-value: #f3d9a4; }
+body{background:#1b1736;transition:--b1 8s ease,--b2 8s ease,--b3 8s ease}
+.bg{position:fixed;inset:0;z-index:0;opacity:0;transition:opacity 8s ease;pointer-events:none}
+.bg.show{opacity:1}
+.sky span:nth-child(1){background:var(--b1)}
+.sky span:nth-child(2){background:var(--b2)}
+.sky span:nth-child(3){background:var(--b3)}
+.sky{position:relative;z-index:0}
+/* text stays readable on every theme */
+.vi,.en,h1,.timer{text-shadow:0 1px 12px rgba(0,0,0,.35)}
+
+/* ---------- banner, buttons, reminder & install ---------- */
+.banner{position:sticky;top:8px;z-index:5;display:flex;align-items:center;gap:10px;justify-content:space-between;margin:14px 0 0;padding:10px 14px;border-radius:16px;
+  background:rgba(243,217,164,.18);border:1px solid rgba(243,217,164,.5);backdrop-filter:blur(10px)}
+.banner[hidden]{display:none}
+.banner button{background:var(--gold);color:#2b1d40;border:none;border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer}
+.banner .x{background:transparent;color:var(--txt);font-size:1.3rem;padding:0 6px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.pill{background:rgba(255,255,255,.08);color:var(--txt);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:8px 14px;font:inherit;font-size:.88rem;cursor:pointer}
+.pill[hidden]{display:none}
+.pill small{color:var(--muted)}
+.small{font-size:.82rem;line-height:1.55}
+.sel.time{max-width:140px;color-scheme:dark}
+details.list.remind,details.list.install{margin-top:14px}
+#iosHelp[hidden],#andHelp[hidden]{display:none}

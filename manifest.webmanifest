@@ -1,0 +1,21 @@
+{
+  "name": "Thiền · Affirmations",
+  "short_name": "Thiền",
+  "description": "Thiền với nhạc nhẹ và câu khẳng định song ngữ Việt – Anh. Meditation with gentle music and bilingual affirmations.",
+  "lang": "vi",
+  "dir": "ltr",
+  "id": "./",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1b1736",
+  "theme_color": "#1b1736",
+  "categories": ["health", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
