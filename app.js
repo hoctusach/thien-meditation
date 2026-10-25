@@ -82,11 +82,8 @@
 
   // ---------- bell sounds ----------
   const BELL_SOUNDS = [
-    { id: "temple", vi: "Chuông chùa trầm", en: "Deep temple bell" },
-    { id: "bowl", vi: "Chuông bát ấm", en: "Warm singing bowl" },
-    { id: "gong", vi: "Cồng êm", en: "Soft gong" },
-    { id: "chime", vi: "Chuông gió ngân", en: "Gentle long chime" },
-    { id: "wood", vi: "Chuông gỗ ấm", en: "Warm wooden bell" },
+    { id: "thien", vi: "Chuông thiền", en: "Meditation bell" },
+    { id: "thien-tram", vi: "Chuông thiền trầm", en: "Deep meditation bell" },
     { id: "bright", vi: "Chuông sáng (ngắn)", en: "Bright short chime" },
   ];
   window.BELL_SOUNDS = BELL_SOUNDS;
@@ -103,8 +100,8 @@
     bellGain.gain.value = bv();
     try { const buf = await loadBell(id); const s = ctx.createBufferSource(); s.buffer = buf; s.connect(bellGain); s.start(); } catch (e) { console.warn("bell", e); }
   }
-  state.bellSound = (() => { try { return localStorage.getItem("thien.bellSound") || "temple"; } catch (e) { return "temple"; } })();
-  if (!BELL_SOUNDS.some(b => b.id === state.bellSound)) state.bellSound = "temple";
+  state.bellSound = (() => { try { return localStorage.getItem("thien.bellSound") || "thien"; } catch (e) { return "thien"; } })();
+  if (!BELL_SOUNDS.some(b => b.id === state.bellSound)) { state.bellSound = "thien"; try { localStorage.setItem("thien.bellSound", "thien"); } catch (e) {} }   // old bells removed -> new default
   $("bellSound").innerHTML = BELL_SOUNDS.map(b => `<option value="${b.id}">${b.vi} · ${b.en}</option>`).join("");
   $("bellSound").value = state.bellSound;
   $("bellSound").onchange = () => { state.bellSound = $("bellSound").value; try { localStorage.setItem("thien.bellSound", state.bellSound); } catch (e) {} playBellSound(state.bellSound); };

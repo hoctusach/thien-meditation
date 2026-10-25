@@ -26,7 +26,7 @@ Trang web tĩnh (HTML/CSS/JS, không cần build).
 
 ## Nhắc nhở hằng ngày
 Trong app: “⏰ Nhắc nhở hằng ngày” → chọn giờ → bật. Có 4 lớp:
-1. **Mở app sau giờ nhắc** → hiện “Đến giờ thiền rồi” + 5 hồi chuông chậm (`audio/bell5.mp3`, ~22s). Luôn hoạt động.
+1. **Mở app sau giờ nhắc** → hiện “Đến giờ thiền rồi” + 5 hồi chuông chậm (`audio/bell5.mp3`, ~46s; bài thiền bắt đầu khi hồi cuối đang ngân). Luôn hoạt động.
 2. **📅 Thêm vào lịch** → file `.ics` lặp lại mỗi ngày có báo thức — cách chắc chắn nhất, dùng âm báo của lịch.
 3. **Nhắc nền Android** (Periodic Background Sync, chỉ khi đã cài app trên Chrome Android) — trình duyệt tự quyết định lúc chạy, không đúng giờ.
 4. **Thông báo đẩy (Web Push) miễn phí qua GitHub Actions** — `.github/workflows/daily-reminder.yml` chạy mỗi 10 phút và gửi thông báo cho những ai đã đến giờ.
@@ -39,14 +39,14 @@ Trong app: “⏰ Nhắc nhở hằng ngày” → chọn giờ → bật. Có 4
    - Thông báo dùng âm thanh mặc định của hệ thống (web không thể đặt âm chuông riêng); bấm vào thông báo sẽ mở app và reo 5 hồi chuông.
 
 ## Tiếng chuông
-6 tiếng chuông, đều do `tools/build_bells.py` tự tổng hợp (cộng các hoạ âm bằng numpy, đánh mềm, ngân dài, lọc bớt âm chói) — **không dùng mẫu âm thanh của bên thứ ba, không có ràng buộc bản quyền**.
+3 tiếng chuông, đều do `tools/build_bells.py` tự tổng hợp bằng numpy (tổng hợp theo mode: mỗi hoạ âm có tần số, độ lớn và tốc độ tắt riêng) — **không dùng bất kỳ mẫu âm thanh nào của bên thứ ba, không có ràng buộc bản quyền** (tự tạo, dùng tự do).
+
+“Chuông thiền” được dựng lại từ **thông số đo được** của một tiếng chuông thiền tham khảo (video hướng dẫn thiền của Gosinga): âm chính ~1316 Hz, các mode 150 / 430+439 / 825+834 / 1890 / 2530 Hz, ngân dài (âm 430 Hz tắt sau ~60s, âm chính ~15s), dùi gõ rõ nhưng không chát (~5 ms). Chỉ đo thông số; **không dùng, không phát hành âm thanh gốc**. Độ giống phổ so với bản tham khảo: ~0,97 (tương quan phổ 1/12 quãng tám), độ tắt −1,76 dB/s so với −1,85 dB/s.
 | id | Tên | Độ ngân |
 |---|---|---|
-| temple | Chuông chùa trầm (mặc định) | ~12s |
-| bowl | Chuông bát ấm | ~12s |
-| gong | Cồng êm | ~11s |
-| chime | Chuông gió ngân | ~10s |
-| wood | Chuông gỗ ấm | ~8s |
+| thien | Chuông thiền (mặc định) | ~14s |
+| thien-tram | Chuông thiền trầm (cùng chuông, thấp hơn 3 nửa cung, ngân lâu hơn) | ~16s |
 | bright | Chuông sáng (ngắn) — tiếng cũ | ~4s |
-Mỗi chuông có `audio/bells/<id>.mp3` (1 hồi) và `<id>-x5.mp3` (5 hồi chậm, cách ~7,5s) dùng cho nhắc nhở hằng ngày. `audio/bell5.mp3` = bản 5 hồi của chuông mặc định. Mẫu nghe thử: `samples/bells/`.
+
+Mỗi chuông có `audio/bells/<id>.mp3` (1 hồi) và `<id>-x5.mp3` (5 hồi chậm, cách 8–9s) dùng cho nhắc nhở hằng ngày. `audio/bell5.mp3` = bản 5 hồi của chuông mặc định (~46s). Ai đã chọn chuông cũ (đã bỏ) sẽ tự chuyển về “Chuông thiền”. Mẫu nghe thử: `samples/bells/` (tạo bằng `SAMPLES=1 python3 tools/build_bells.py`).
 Thời gian mặc định: **Không giới hạn** (đồng hồ đếm lên từ 00:00).
