@@ -65,6 +65,69 @@
   $("installBtn").onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; installUI(); };
   installUI();
 
+  // ---------- automatic install popup ----------
+  const SNOOZE_KEY = "thien.installSnooze", SNOOZE_MS = 3 * 24 * 3600e3;
+  const isIPad = /ipad/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const inApp = /FBAN|FBAV|FB_IAB|Instagram|Zalo|Line\/|Messenger|TikTok|musical_ly/i.test(ua);
+  const iosOther = isIOS && /CriOS|FxiOS|EdgiOS|OPiOS|YaBrowser|GSA\//i.test(ua);
+  const iosSafari = isIOS && !iosOther && !inApp;
+  const shareSvg = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5v10h14V11h-1"/></svg>`;
+  const addSvg = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+  let sheetShown = false, sheetTimer = null;
+  const snoozed = () => Number(store.get(SNOOZE_KEY, 0)) > Date.now();
+  function sheetMode() {
+    if (standalone()) return null;
+    if (deferred) return "prompt";                 // Android / desktop Chrome & Edge
+    if (inApp) return "inapp";                     // Zalo / Facebook / Messenger built-in browsers can't install
+    if (iosSafari) return "ios";
+    if (iosOther) return "ios-other";
+    return null;                                   // other browsers: no reliable install path, stay quiet
+  }
+  function fillSheet(mode) {
+    const steps = $("sheetSteps"), btn = $("sheetInstall");
+    steps.hidden = mode === "prompt"; btn.hidden = mode !== "prompt"; $("shareArrow").hidden = mode !== "ios";
+    $("shareArrow").className = "share-arrow" + (isIPad ? " top" : "");
+    $("sheetLater").textContent = mode === "prompt" ? "Để sau" : "Đã hiểu, để sau";
+    if (mode === "ios") steps.innerHTML = `<ol>
+        <li><span class="ico">${shareSvg}</span><span class="txt">Bấm nút <b>Chia sẻ</b> ${isIPad ? "ở góc trên bên phải" : "ở thanh dưới cùng của Safari"}.</span></li>
+        <li><span class="ico">${addSvg}</span><span class="txt">Kéo xuống, chọn <b>“Thêm vào MH chính”</b> <small>(Add to Home Screen)</small>.</span></li>
+        <li><span class="ico">🪷</span><span class="txt">Bấm <b>Thêm</b>, rồi mở app từ biểu tượng hoa sen.</span></li></ol>`;
+    else if (mode === "ios-other") steps.innerHTML = `<ol>
+        <li><span class="ico">${shareSvg}</span><span class="txt">Bấm nút <b>Chia sẻ</b> của trình duyệt (trên thanh địa chỉ hoặc trong menu).</span></li>
+        <li><span class="ico">${addSvg}</span><span class="txt">Chọn <b>“Thêm vào MH chính”</b>. Nếu không thấy, hãy mở trang này bằng <b>Safari</b> rồi làm lại.</span></li></ol>`;
+    else if (mode === "inapp") steps.innerHTML = `<ol>
+        <li><span class="ico">⋯</span><span class="txt">Bấm menu <b>⋯</b> ở góc màn hình.</span></li>
+        <li><span class="ico">🌐</span><span class="txt">Chọn <b>“Mở bằng trình duyệt”</b> (${isIOS ? "Safari" : "Chrome"}), rồi cài app từ đó.</span></li></ol>`;
+  }
+  function showSheet() {
+    clearTimeout(sheetTimer);
+    const mode = sheetMode();
+    if (!mode || sheetShown || snoozed()) return;
+    if (window.THIEN && THIEN.isPlaying()) { sheetTimer = setTimeout(showSheet, 5000); return; }   // never interrupt a session
+    fillSheet(mode); sheetShown = true;
+    $("installSheet").hidden = false; requestAnimationFrame(() => $("installSheet").classList.add("open"));
+  }
+  function hideSheet(snooze) {
+    if (snooze) store.set(SNOOZE_KEY, Date.now() + SNOOZE_MS);
+    $("installSheet").classList.remove("open"); setTimeout(() => { $("installSheet").hidden = true; }, 300);
+  }
+  const scheduleSheet = ms => { clearTimeout(sheetTimer); sheetTimer = setTimeout(showSheet, ms); };
+  $("sheetLater").onclick = () => hideSheet(true);
+  $("sheetX").onclick = () => hideSheet(true);
+  $("installSheet").addEventListener("click", e => { if (e.target.id === "installSheet") hideSheet(true); });
+  $("sheetInstall").onclick = async () => {
+    if (!deferred) return hideSheet(false);
+    const d = deferred; deferred = null; hideSheet(false);
+    d.prompt(); const c = await d.userChoice.catch(() => ({}));
+    if (c && c.outcome === "dismissed") store.set(SNOOZE_KEY, Date.now() + SNOOZE_MS);
+    installUI();
+  };
+  window.addEventListener("beforeinstallprompt", () => scheduleSheet(2000));
+  window.addEventListener("appinstalled", () => { sheetShown = true; hideSheet(false); });
+  matchMedia("(display-mode: standalone)").addEventListener?.("change", e => { if (e.matches) hideSheet(false); });
+  scheduleSheet(3000);                               // iOS & in-app browsers (no beforeinstallprompt there)
+  window.THIEN_INSTALL = { show: showSheet, mode: sheetMode };
+
   // ---------- daily reminder ----------
   const R = Object.assign({ on: false, time: "06:30", lastRung: "" }, store.get("thien.reminder", {}));
   $("remTime").value = R.time; $("remOn").checked = R.on;

@@ -111,3 +111,31 @@ body{background:#1b1736;transition:--b1 8s ease,--b2 8s ease,--b3 8s ease}
 .sel.time{max-width:140px;color-scheme:dark}
 details.list.remind,details.list.install{margin-top:14px}
 #iosHelp[hidden],#andHelp[hidden]{display:none}
+
+/* ---------- install popup (bottom sheet) ---------- */
+.sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,8,25,0);transition:background .3s}
+.sheet-wrap[hidden]{display:none}
+.sheet-wrap.open{background:rgba(10,8,25,.45)}
+.sheet{position:relative;width:min(560px,100%);margin:0 10px calc(14px + env(safe-area-inset-bottom));padding:20px 18px 16px;border-radius:24px;
+  background:linear-gradient(160deg,rgba(60,42,92,.97),rgba(40,28,64,.97));border:1px solid rgba(243,217,164,.35);box-shadow:0 20px 60px rgba(0,0,0,.45);
+  color:var(--txt);transform:translateY(120%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.sheet-wrap.open .sheet{transform:none}
+.sheet-head{display:flex;gap:14px;align-items:center}
+.sheet-head img{border-radius:16px;flex:none;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.sheet h2{margin:0 0 4px;font-size:1.15rem;font-weight:500;color:var(--gold)}
+.sheet p{margin:0;font-size:.9rem;line-height:1.45;color:var(--txt);opacity:.9}
+.sheet-x{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
+.sheet-steps ol{list-style:none;padding:0;margin:14px 0 4px}
+.sheet-steps li{display:flex;gap:10px;align-items:center;margin:8px 0;font-size:.92rem;line-height:1.4}
+.sheet-steps .ico{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#7fb6ff;font-size:1rem}
+.sheet-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.sheet-btns .pill[hidden]{display:none}
+.pill.primary{background:var(--gold);color:#2b1d40;border-color:var(--gold);font-weight:600;padding:9px 22px}
+.share-arrow{position:fixed;left:50%;bottom:calc(2px + env(safe-area-inset-bottom));transform:translateX(-50%);font-size:2rem;color:var(--gold);
+  text-shadow:0 2px 10px rgba(0,0,0,.5);animation:bob 1.2s ease-in-out infinite;z-index:51}
+.share-arrow.top{top:6px;bottom:auto;left:auto;right:64px;transform:rotate(180deg);animation-name:bobUp}
+.share-arrow[hidden]{display:none}
+.sheet-wrap:has(.share-arrow:not([hidden]):not(.top)) .sheet{margin-bottom:calc(52px + env(safe-area-inset-bottom))}
+@keyframes bob{50%{transform:translate(-50%,8px)}}
+@keyframes bobUp{50%{transform:rotate(180deg) translateY(8px)}}
+@media (prefers-reduced-motion:reduce){.share-arrow{animation:none}.sheet{transition:none}}

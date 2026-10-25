@@ -179,6 +179,25 @@
     </div>
   </details>
 
+  <div id="installSheet" class="sheet-wrap" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <button class="sheet-x" id="sheetX" aria-label="Đóng / Close">×</button>
+      <div class="sheet-head">
+        <img src="icons/icon-192.png" alt="" width="64" height="64">
+        <div>
+          <h2 id="sheetTitle">Cài app Thiền 🪷</h2>
+          <p>Mở nhanh từ màn hình chính, dùng được cả khi không có mạng và nhận nhắc nhở thiền mỗi ngày.</p>
+        </div>
+      </div>
+      <div id="sheetSteps" class="sheet-steps" hidden></div>
+      <div class="sheet-btns">
+        <button id="sheetLater" class="pill">Để sau</button>
+        <button id="sheetInstall" class="pill primary">Cài đặt</button>
+      </div>
+    </div>
+    <div id="shareArrow" class="share-arrow" hidden aria-hidden="true">⬇</div>
+  </div>
+
   <footer>
     Giọng đọc AI: tiếng Việt <b>VieNeu-TTS</b> (giọng miền Nam “Thục Đoan”), English <b>Microsoft Edge neural (Ava)</b>.
     Nhạc nền (6 bài xoay vòng) và tiếng chuông được tạo trực tiếp trong trình duyệt (Web Audio).<br>
