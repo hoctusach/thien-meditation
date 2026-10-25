@@ -2,7 +2,7 @@
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
-  const state = { lang: "both", dur: 10, tone: 432, playing: false, idx: 0, order: [], remaining: 600, token: 0 };
+  const state = { lang: "both", dur: 10, tone: 432, bell: 3, lastBell: 0, playing: false, idx: 0, order: [], remaining: 600, token: 0 };
 
   // ---------- list ----------
   $("total").textContent = A.length;
@@ -31,11 +31,12 @@
   seg("langSeg", "lang");
   seg("durSeg", "dur", () => { state.remaining = state.dur * 60; showTime(); });
   seg("toneSeg", "tone", () => music && music.setTone(state.tone));
+  seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(.8); } });
   $("shuffle").onchange = () => { makeOrder(); state.idx = 0; };
   $("gap").oninput = () => $("gapVal").textContent = $("gap").value + "s";
 
   // ---------- audio graph ----------
-  let ctx, master, musicGain, voiceGain, music, voiceEl;
+  let ctx, master, musicGain, voiceGain, music, voiceEl, delayIn;
   function initAudio() {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -58,6 +59,7 @@
     const delay = ctx.createDelay(4); delay.delayTime.value = 1.7;
     const fb = ctx.createGain(); fb.gain.value = .42;
     const wet = ctx.createGain(); wet.gain.value = .35;
+    delayIn = delay;
     bus.connect(lp); lp.connect(out); lp.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(out);
     const lfo = ctx.createOscillator(); lfo.frequency.value = .05; const lfoAmt = ctx.createGain(); lfoAmt.gain.value = 500;
     lfo.connect(lfoAmt); lfoAmt.connect(lp.frequency); lfo.start();
@@ -80,10 +82,31 @@
     nl.connect(nlg); nlg.connect(ng.gain); nl.start(); ns.connect(nf); nf.connect(ng); ng.connect(out); ns.start();
     return {
       setTone(f) { voices.forEach(v => v.oscs.forEach(o => o.frequency.setTargetAtTime(f * v.r, ctx.currentTime, 1.5))); },
-      bell() {
-        [1, 2.76, 5.4].forEach((m, i) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = state.tone * m; o.type = "sine";
-          g.gain.setValueAtTime(0, ctx.currentTime); g.gain.linearRampToValueAtTime(.18 / (i + 1), ctx.currentTime + .02); g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + 7 / (i + 1));
-          o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime + 8); });
+      // Synthesized Tibetan-style singing bowl: inharmonic partials, slow beating, long decay.
+      bell(strength = 1) {
+        if (!ctx) return;
+        const vol = Math.pow($("bellVol").value / 100, 1.4) * 0.32 * strength;
+        if (vol <= 0) return;
+        const t0 = ctx.currentTime + 0.05, base = state.tone / 2;
+        const out = ctx.createGain(); out.gain.value = vol;
+        const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 5000;
+        out.connect(lp); lp.connect(master); lp.connect(delayIn);
+        const partials = [[1, 1, 14], [2.71, .55, 10], [5.14, .28, 7], [8.32, .12, 4.5], [12.1, .05, 3]];
+        partials.forEach(([m, a, dec]) => [-1, 1].forEach(s => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = "sine"; o.frequency.value = base * m * (1 + s * 0.0018 * m);
+          g.gain.setValueAtTime(0, t0);
+          g.gain.linearRampToValueAtTime(a * .5, t0 + .015);
+          g.gain.exponentialRampToValueAtTime(.0001, t0 + dec);
+          o.connect(g); g.connect(out); o.start(t0); o.stop(t0 + dec + .1);
+        }));
+        // soft strike (mallet) transient
+        const nb = ctx.createBuffer(1, ctx.sampleRate * .08, ctx.sampleRate), nd = nb.getChannelData(0);
+        for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / nd.length, 3);
+        const ns = ctx.createBufferSource(), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
+        ns.buffer = nb; nf.type = "bandpass"; nf.frequency.value = base * 5; nf.Q.value = 2; ng.gain.value = .25;
+        ns.connect(nf); nf.connect(ng); ng.connect(out); ns.start(t0);
+        state.lastBell = Date.now();
       }
     };
   }
@@ -127,7 +150,8 @@
   async function runLoop() {
     const tok = ++state.token;
     voiceEl.pause();
-    await wait(1200, tok);
+    if (state.bell !== 0 && state.freshStart) { state.freshStart = false; music.bell(1); if (!await wait(6500, tok)) return; }
+    else await wait(1200, tok);
     while (state.playing && tok === state.token) {
       if (state.idx >= state.order.length) { if (!$("loop").checked) { stop(true); return; } makeOrder(); state.idx = 0; }
       const n = state.order[state.idx], a = A[n], id = pad(n + 1);
@@ -139,12 +163,16 @@
       if (state.lang !== "vi") { if (!await playFile(`audio/en_${id}.mp3`, tok)) return; }
       state.idx++;
       if (!await wait($("gap").value * 1000, tok)) return;
+      if (state.bell > 0 && Date.now() - state.lastBell >= state.bell * 60000 && !(state.dur && state.remaining <= 20)) {
+        music.bell(.75); if (!await wait(9000, tok)) return;   // let the bowl ring out before the next line
+      }
       if (state.dur && state.remaining <= 0) { stop(true); return; }
     }
   }
   function start() {
     initAudio(); ctx.resume();
     state.playing = true; $("playBtn").textContent = "❚❚";
+    state.freshStart = !state.started; state.started = true; state.lastBell = Date.now();
     if (state.dur && state.remaining <= 0) state.remaining = state.dur * 60;
     musicGain.gain.cancelScheduledValues(ctx.currentTime);
     musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, 1.5);
@@ -161,7 +189,8 @@
     if (state.lock) { state.lock.release().catch(() => {}); state.lock = null; }
     breathe();
     if (finished) {
-      music.bell();
+      if (state.bell !== 0) { music.bell(1); setTimeout(() => music.bell(.6), 4500); }
+      state.started = false;
       $("lineVi").textContent = "Cảm ơn bạn. Mọi điều tốt đẹp đang đến.";
       $("lineEn").textContent = "Thank you. All good things are on their way.";
       state.remaining = state.dur * 60; state.idx = 0; showTime(); $("counter").textContent = "";
