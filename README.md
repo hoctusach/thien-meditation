@@ -1,4 +1,6 @@
-# Thiền Sung Túc · Abundance Meditation
+# Thiền
+
+Thiền để thay đổi tần số · Meditate to shift your frequency.
 
 Trang web tĩnh (HTML/CSS/JS, không cần build).
 

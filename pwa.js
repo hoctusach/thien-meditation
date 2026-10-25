@@ -213,9 +213,9 @@
     const f = x => `${x.getFullYear()}${pad(x.getMonth() + 1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
     const end = new Date(d.getTime() + 15 * 60e3), now = new Date(), u = new Date(now.getTime() + now.getTimezoneOffset() * 60e3);
     const appUrl = new URL("./?reminder=1", location.href).href;
-    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Thien Affirmations//VI", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Thien//VI", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
       `UID:thien-daily-${Date.now()}@thien-meditation`, `DTSTAMP:${f(u)}Z`, `DTSTART:${f(d)}`, `DTEND:${f(end)}`, "RRULE:FREQ=DAILY",
-      "SUMMARY:🪷 Thiền · Meditation", `DESCRIPTION:Đến giờ thiền rồi. Mở app: ${appUrl}`, `URL:${appUrl}`,
+      "SUMMARY:🪷 Thiền", `DESCRIPTION:Đến giờ thiền rồi. Mở app: ${appUrl}`, `URL:${appUrl}`,
       "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:🪷 Đến giờ thiền rồi", "TRIGGER:PT0M", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" })); a.download = "thien-nhac-nho.ics";
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
