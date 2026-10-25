@@ -1,5 +1,5 @@
 // Service worker — offline cache + daily reminder notifications.
-const VERSION = "18cbeea977";
+const VERSION = "1ae79872f5";
 const CACHE = "thien-" + VERSION;
 const ASSETS = [
  "./",
@@ -92,11 +92,6 @@ const ASSETS = [
  "audio/vi_38.mp3",
  "audio/vi_39.mp3",
  "audio/vi_40.mp3",
- "audio/bells/bright-x5.mp3",
- "audio/bells/bright.mp3",
- "audio/bells/thien-tram-x5.mp3",
- "audio/bells/thien-tram.mp3",
- "audio/bells/thien-x5.mp3",
  "audio/bells/thien.mp3",
  "icons/apple-touch-icon.png",
  "icons/badge-96.png",

@@ -63,3 +63,5 @@ Ghi công (cũng hiện ở cuối trang): *“Meditation Impromptu 02” Kevin 
 
 Mỗi chuông có `audio/bells/<id>.mp3` (1 hồi) và `<id>-x5.mp3` (5 hồi chậm, cách 8–9s) dùng cho nhắc nhở hằng ngày. `audio/bell5.mp3` = bản 5 hồi của chuông mặc định (~46s). Ai đã chọn chuông cũ (đã bỏ) sẽ tự chuyển về “Chuông thiền”. Mẫu nghe thử: `samples/bells/` (tạo bằng `SAMPLES=1 python3 tools/build_bells.py`).
 Thời gian mặc định: **Không giới hạn** (đồng hồ đếm lên từ 00:00).
+
+> **Cập nhật 26/10/2026:** app chỉ còn 1 chuông cố định là "Chuông thiền" 3 hồi (`audio/bells/thien.mp3` = `audio/bell5.mp3`, bản `samples/bells/1-chuong-thien-3-hoi.mp3` đã duyệt), không còn phần chọn chuông. Các chuông khác và bản x5 đã bỏ.

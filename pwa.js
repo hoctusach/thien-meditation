@@ -136,7 +136,7 @@
   const save = () => { store.set("thien.reminder", R); swReady.then(reg => { const sw = navigator.serviceWorker && navigator.serviceWorker.controller || reg && reg.active; sw && sw.postMessage({ type: "reminder", value: { on: R.on, time: R.time, lastShown: R.lastRung } }); }); };
 
   const bellAudio = new Audio(); bellAudio.preload = "none";
-  const bellFile = () => { let id = "thien"; try { id = localStorage.getItem("thien.bellSound") || "thien"; } catch (e) {} if (!["thien", "thien-tram", "bright"].includes(id)) id = "thien"; return `audio/bells/${id}-x5.mp3`; };
+  const bellFile = () => "audio/bells/thien.mp3";
   const bellVolume = () => { try { const v = localStorage.getItem("thien.bellVol"); return Math.min(1, Math.pow((v === null ? 45 : Number(v)) / 100, 1.5) * 1.6); } catch (e) { return .5; } };
   let bellPlayed = false;
   function playBell() { const f = bellFile(); if (!bellAudio.src.endsWith(f)) bellAudio.src = f; bellAudio.volume = bellVolume(); bellAudio.currentTime = 0; return bellAudio.play().then(() => (bellPlayed = true)).catch(() => false); }
