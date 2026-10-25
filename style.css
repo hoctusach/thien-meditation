@@ -1,0 +1,52 @@
+:root{--bg1:#1b1736;--bg2:#3b2a5c;--gold:#f3d9a4;--txt:#f6f1ff;--muted:#bfb4d9;--card:rgba(255,255,255,.07)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:"Be Vietnam Pro","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;color:var(--txt);
+background:radial-gradient(1200px 800px at 50% -10%,#6d4f9c 0%,transparent 60%),linear-gradient(170deg,var(--bg1),var(--bg2) 60%,#5a3d5e);background-attachment:fixed;overflow-x:hidden}
+.sky span{position:fixed;border-radius:50%;filter:blur(60px);opacity:.35;z-index:0;animation:drift 30s ease-in-out infinite alternate}
+.sky span:nth-child(1){width:320px;height:320px;background:#e7a6c8;left:-80px;top:20%}
+.sky span:nth-child(2){width:380px;height:380px;background:#7fb6e8;right:-120px;top:50%;animation-duration:40s}
+.sky span:nth-child(3){width:260px;height:260px;background:#f3d9a4;left:30%;bottom:-100px;animation-duration:35s}
+@keyframes drift{to{transform:translate(60px,-40px) scale(1.15)}}
+main{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:28px 18px 40px}
+header{text-align:center}
+h1{font-weight:300;letter-spacing:.06em;margin:.2em 0 0;font-size:2rem;color:var(--gold)}
+.sub{margin:.2em 0 0;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;font-size:.72rem}
+.stage{display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:18px}
+.orb-wrap{position:relative;width:220px;height:220px;display:grid;place-items:center}
+.orb{position:absolute;inset:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6e0,#f3c98b 35%,#c47fb3 70%,#6a4c9c);
+box-shadow:0 0 60px rgba(243,201,139,.55),0 0 120px rgba(196,127,179,.35);transform:scale(.75);transition:transform 4s ease-in-out}
+.orb.in{transform:scale(1.05)}
+.orb.hold{transform:scale(1.05)}
+.orb.out{transform:scale(.75)}
+.breath-text{position:relative;color:#3a2550;font-weight:600;font-size:1.05rem;display:flex;flex-direction:column;line-height:1.2}
+.breath-text small{font-weight:400;font-size:.75rem;opacity:.75}
+.lines{min-height:130px;margin:18px 0 6px;padding:0 6px;transition:opacity .8s}
+.lines.fade{opacity:0}
+.vi{font-size:1.45rem;line-height:1.45;margin:0 0 .5em;font-weight:400}
+.en{font-size:1.02rem;color:var(--muted);margin:0;font-style:italic}
+.timer{font-variant-numeric:tabular-nums;color:var(--gold);letter-spacing:.08em}
+.muted{color:var(--muted);font-size:.85em}
+.play{margin-top:14px;width:76px;height:76px;border-radius:50%;border:1px solid rgba(243,217,164,.6);background:rgba(243,217,164,.12);
+color:var(--gold);font-size:1.7rem;cursor:pointer;transition:.3s;backdrop-filter:blur(6px)}
+.play:hover{background:rgba(243,217,164,.25);transform:scale(1.05)}
+.panel{margin-top:26px;background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:16px;backdrop-filter:blur(10px)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 0}
+.row>label{font-size:.95rem;min-width:110px}
+.row small,summary small,.tg small{color:var(--muted);font-size:.75em;margin-left:3px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{background:transparent;color:var(--txt);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}
+.seg button.on{background:var(--gold);color:#2b1d40;border-color:var(--gold)}
+.slider input{flex:1;accent-color:var(--gold)}
+.toggles{justify-content:flex-start;gap:16px}
+.tg{display:flex;align-items:center;gap:6px;font-size:.92rem;cursor:pointer}
+.tg input{accent-color:var(--gold)}
+.list{margin-top:18px;background:var(--card);border-radius:16px;padding:12px 16px}
+.list summary{cursor:pointer}
+.list ol{padding-left:1.4em;margin:.8em 0 0}
+.list li{margin:.55em 0;line-height:1.4;cursor:pointer}
+.list li span{display:block;color:var(--muted);font-size:.85em;font-style:italic}
+.list li.cur{color:var(--gold)}
+footer{margin-top:26px;text-align:center;font-size:.78rem;color:var(--muted);line-height:1.6}
+@media (max-width:480px){.vi{font-size:1.25rem}.orb-wrap{width:190px;height:190px}h1{font-size:1.7rem}}
+@media (prefers-reduced-motion:reduce){.sky span{animation:none}.orb{transition:none}}

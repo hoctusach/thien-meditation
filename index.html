@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Thiền Sung Túc · Abundance Meditation</title>
+<meta name="description" content="Thiền với nhạc nhẹ và câu khẳng định song ngữ Việt – Anh.">
+<meta name="theme-color" content="#1b1736">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪷</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sky"><span></span><span></span><span></span></div>
+<main>
+  <header>
+    <h1>Thiền Sung Túc</h1>
+    <p class="sub">Abundance · Gratitude · Peace</p>
+  </header>
+
+  <section class="stage">
+    <div class="orb-wrap">
+      <div id="orb" class="orb"></div>
+      <div id="breathText" class="breath-text">Sẵn sàng<small>Ready</small></div>
+    </div>
+    <div class="lines" aria-live="polite">
+      <p id="lineVi" class="vi">Hít thở sâu, và bắt đầu khi bạn sẵn sàng.</p>
+      <p id="lineEn" class="en">Take a deep breath, and begin when you are ready.</p>
+    </div>
+    <div class="timer"><span id="timeLeft">10:00</span> <span id="counter" class="muted"></span></div>
+    <button id="playBtn" class="play" aria-label="Bắt đầu / Start">▶</button>
+  </section>
+
+  <section class="panel">
+    <div class="row">
+      <label>Ngôn ngữ <small>Language</small></label>
+      <div class="seg" id="langSeg">
+        <button data-v="both" class="on">Việt + English</button>
+        <button data-v="vi">Chỉ Việt</button>
+        <button data-v="en">Chỉ English</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Thời gian <small>Duration</small></label>
+      <div class="seg" id="durSeg">
+        <button data-v="5">5'</button>
+        <button data-v="10" class="on">10'</button>
+        <button data-v="15">15'</button>
+        <button data-v="20">20'</button>
+        <button data-v="0">∞</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Nhạc nền <small>Music</small></label>
+      <div class="seg" id="toneSeg">
+        <button data-v="432" class="on">432 Hz</button>
+        <button data-v="528">528 Hz</button>
+        <button data-v="396">396 Hz</button>
+      </div>
+    </div>
+    <div class="row slider"><label for="musicVol">🎵 Nhạc <small>Music</small></label><input id="musicVol" type="range" min="0" max="100" value="45"></div>
+    <div class="row slider"><label for="voiceVol">🗣️ Giọng <small>Voice</small></label><input id="voiceVol" type="range" min="0" max="100" value="90"></div>
+    <div class="row slider"><label for="gap">⏳ Khoảng lặng <small>Pause</small></label><input id="gap" type="range" min="2" max="15" value="5"><span id="gapVal" class="muted">5s</span></div>
+    <div class="row toggles">
+      <label class="tg"><input type="checkbox" id="loop" checked> Lặp lại <small>Loop</small></label>
+      <label class="tg"><input type="checkbox" id="shuffle"> Xáo trộn <small>Shuffle</small></label>
+      <label class="tg"><input type="checkbox" id="breath" checked> Nhịp thở <small>Breathing</small></label>
+    </div>
+  </section>
+
+  <details class="list">
+    <summary>📜 Danh sách câu khẳng định <small>All affirmations</small> (<span id="total">0</span>)</summary>
+    <ol id="allLines"></ol>
+  </details>
+
+  <footer>
+    Giọng đọc AI: tiếng Việt <b>VieNeu-TTS</b> (giọng miền Nam “Thục Đoan”), English <b>Microsoft Edge neural (Ava)</b>.
+    Nhạc nền được tạo trực tiếp trong trình duyệt (Web Audio).<br>
+    Thở chậm, mỉm cười, và cảm nhận sự đủ đầy. 🪷
+  </footer>
+</main>
+<script src="affirmations.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
