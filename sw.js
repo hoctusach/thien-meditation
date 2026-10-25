@@ -1,5 +1,5 @@
 // Service worker — offline cache + daily reminder notifications.
-const VERSION = "d0c59099d6";
+const VERSION = "18cbeea977";
 const CACHE = "thien-" + VERSION;
 const ASSETS = [
  "./",
@@ -106,6 +106,7 @@ const ASSETS = [
  "icons/maskable-192.png",
  "icons/maskable-512.png"
 ];
+const MCACHE = "thien-music-9b85ea9704";  // background music: cached on first play, kept across app updates
 const CFG = "thien-config";                      // small cache used as a key/value store (reminder settings)
 
 self.addEventListener("install", e => {
@@ -113,7 +114,7 @@ self.addEventListener("install", e => {
 });
 self.addEventListener("activate", e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k.startsWith("thien-") && k !== CACHE && k !== CFG) await caches.delete(k);
+    for (const k of await caches.keys()) if (k.startsWith("thien-") && k !== CACHE && k !== CFG && k !== MCACHE) await caches.delete(k);
     await self.clients.claim();
   })());
 });
@@ -129,12 +130,23 @@ async function rangeResponse(req, res) {
     "Content-Type": res.headers.get("Content-Type") || "audio/mpeg", "Content-Range": `bytes ${start}-${end}/${size}`,
     "Content-Length": String(end - start + 1), "Accept-Ranges": "bytes" } });
 }
+const saving = new Set();
 self.addEventListener("fetch", e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== location.origin) return;
   if (req.mode === "navigate") {                 // pages: network first (get updates), cache when offline
     e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put("./index.html", c)); return r; })
       .catch(() => caches.match("./index.html")));
+    return;
+  }
+  if (url.pathname.includes("/audio/music/")) {   // stream from network the first time, save the whole file for next time
+    const key = url.origin + url.pathname;
+    e.respondWith((async () => {
+      const c = await caches.open(MCACHE), hit = await c.match(key);
+      if (hit) return req.headers.has("range") ? rangeResponse(req, hit) : hit;
+      if (!saving.has(key)) { saving.add(key); e.waitUntil(fetch(key).then(r => r.ok && r.status === 200 ? c.put(key, r) : null).catch(() => {}).finally(() => saving.delete(key))); }
+      return fetch(req);
+    })());
     return;
   }
   e.respondWith((async () => {

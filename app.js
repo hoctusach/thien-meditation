@@ -2,7 +2,7 @@
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
-  const state = { breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, trackSec: 0, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
+  const state = { breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
 
   // ---------- items: every VI line and every EN line is its own quote ----------
   const ITEMS = [];
@@ -48,13 +48,12 @@
   // duration: default is unlimited; new storage key so everyone starts on "Không giới hạn" once
   try { const d = localStorage.getItem("thien.dur.v2"); if (d !== null) { state.dur = Number(d); document.querySelectorAll("#durSeg button").forEach(b => b.classList.toggle("on", Number(b.dataset.v) === state.dur)); } } catch (e) {}
   seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } });
-  seg("toneSeg", "tone", () => music && music.setTone(state.tone));
-  $("shuffle").onchange = () => { makeOrder(); state.idx = 0; };
+    $("shuffle").onchange = () => { makeOrder(); state.idx = 0; };
   seg("gapSeg", "gap");
-  seg("autoSeg", "auto", () => { state.trackSec = 0; });
+  seg("autoSeg", "auto", () => { try { localStorage.setItem("thien.auto", state.auto ? "1" : "0"); } catch (e) {} });
 
   // ---------- audio graph ----------
-  let ctx, master, musicGain, voiceGain, music, voiceEl, playlist;
+  let ctx, master, musicGain, duckGain, voiceGain, music, voiceEl, playlist, previewTimer;
   function initAudio() {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -63,18 +62,22 @@
     voiceGain = ctx.createGain(); voiceGain.gain.value = $("voiceVol").value / 100; voiceGain.connect(master);
     voiceEl = new Audio(); voiceEl.preload = "auto";
     try { ctx.createMediaElementSource(voiceEl).connect(voiceGain); } catch (e) { /* fallback: element volume */ }
+    duckGain = ctx.createGain(); duckGain.connect(musicGain);                 // music dips a little while a quote is spoken
+    const duck = on => duckGain.gain.setTargetAtTime(on ? 0.7 : 1, ctx.currentTime, on ? .25 : .8);
+    voiceEl.addEventListener("play", () => duck(true)); ["pause", "ended", "error"].forEach(ev => voiceEl.addEventListener(ev, () => duck(false)));
     music = createMusic(ctx, musicGain);
-    playlist = createPlaylist(ctx, musicGain, () => state.tone, (i, t) => { state.trackSec = 0; showTrack(); });
-    playlist.play(0);
+    playlist = createPlaylist(ctx, duckGain, { auto: () => state.auto, onChange: () => { saveTrack(); showTrack(); } });
+    playlist.select(state.track || 0);
   }
-  $("musicVol").oninput = () => { if (musicGain && state.playing) musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, .3); };
+  $("musicVol").oninput = () => { if (musicGain && (state.playing || previewTimer)) musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, .3); };
   $("voiceVol").oninput = () => { if (voiceGain) voiceGain.gain.value = $("voiceVol").value / 100; if (voiceEl) voiceEl.volume = 1; };
-  const mv = () => Math.pow($("musicVol").value / 100, 1.6) * 0.5;
+  const mv = () => Math.pow($("musicVol").value / 100, 1.6) * 1.2;   // files are -24 LUFS; default 45 ≈ 15 dB under the voice
+  try { const v = localStorage.getItem("thien.musicVol"); if (v !== null) $("musicVol").value = v; } catch (e) {}
+  $("musicVol").addEventListener("change", () => { try { localStorage.setItem("thien.musicVol", $("musicVol").value); } catch (e) {} });
 
   // Bell only — background music lives in music.js (playlist).
   function createMusic(ctx) {
     return {
-      setTone(f) { playlist && playlist.setTone(f); },
       // Chosen bell sound (pre-rendered, warm, long decay) — see tools/build_bells.py
       bell(id) { playBellSound(id || state.bellSound); state.lastBell = Date.now(); }
     };
@@ -111,18 +114,27 @@
 
   // ---------- now playing (music playlist UI) ----------
   const TR = window.MUSIC_TRACKS || [];
-  TR.forEach((t, i) => { const o = document.createElement("option"); o.value = i; o.textContent = `${i + 1}. ${t.vi} · ${t.en}`; $("trackSel").appendChild(o); });
+  TR.forEach((t, i) => { const o = document.createElement("option"); o.value = i; o.textContent = `${i + 1}. ${t.en}`; $("trackSel").appendChild(o); });
+  try { const k = Number(localStorage.getItem("thien.track")); state.track = k >= 0 && k < TR.length ? k : 0;
+        const a = localStorage.getItem("thien.auto"); if (a !== null) { state.auto = a === "1"; document.querySelectorAll("#autoSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === a)); } } catch (e) { state.track = 0; }
+  function saveTrack() { state.track = playlist.current; try { localStorage.setItem("thien.track", state.track); } catch (e) {} }
   function showTrack() {
-    const i = playlist ? playlist.current : 0, t = TR[i] || {};
-    $("trackName").innerHTML = `${t.vi || ""} <small>${t.en || ""}</small>`;
+    const i = playlist && playlist.current >= 0 ? playlist.current : state.track || 0, t = TR[i] || {};
+    $("trackName").innerHTML = `${t.en || ""} <small>${t.vi || ""}</small>`;
     $("trackSel").value = i;
   }
   showTrack();
-  const goTrack = f => { initAudio(); ctx.resume(); f(); };
-  $("prevTrack").onclick = () => goTrack(() => playlist.prev());
-  $("nextTrack").onclick = () => goTrack(() => playlist.next());
-  $("trackSel").onchange = () => goTrack(() => playlist.play(Number($("trackSel").value)));
-  const TRACK_SEC = 180;   // each piece plays ~3 minutes, then crossfades to the next
+  // Changing track while no session is running plays a short preview, so the change is always audible.
+  function preview() {
+    clearTimeout(previewTimer);
+    musicGain.gain.cancelScheduledValues(ctx.currentTime); musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, .4);
+    playlist.resume();
+    previewTimer = setTimeout(() => { previewTimer = null; if (!state.playing) { musicGain.gain.setTargetAtTime(0, ctx.currentTime, .8); playlist.pause(2.5); } }, 20000);
+  }
+  const goTrack = i => { initAudio(); ctx.resume(); if (state.playing) playlist.play(i); else { playlist.select(i); preview(); } };
+  $("prevTrack").onclick = () => goTrack((playlist ? playlist.current : state.track) - 1);
+  $("nextTrack").onclick = () => goTrack((playlist ? playlist.current : state.track) + 1);
+  $("trackSel").onchange = () => goTrack(Number($("trackSel").value));
 
   // ---------- breathing animation (4s in · 2s hold · 6s out) ----------
   let breathTimer;
@@ -218,11 +230,12 @@
     state.freshStart = !state.session;
     if (!state.session) { state.session = { start: Date.now(), sec: 0 }; state.elapsed = 0; state.goalNoted = false; }
     state.lastBell = Date.now(); $("stopBtn").hidden = false;
+    clearTimeout(previewTimer); previewTimer = null;
     musicGain.gain.cancelScheduledValues(ctx.currentTime);
     musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, 1.5);
+    playlist.resume();                                // tracks play in full, then crossfade (auto: next one · repeat: same one)
     clearInterval(tick);
-    tick = setInterval(() => { if (!state.playing) return; state.elapsed++; state.session.sec++; saveCurrent(); showTime();
-      if (state.auto && ++state.trackSec >= TRACK_SEC) playlist.next(); }, 1000);
+    tick = setInterval(() => { if (!state.playing) return; state.elapsed++; state.session.sec++; saveCurrent(); showTime(); }, 1000);
     breathe(); runLoop();
     if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then(l => state.lock = l).catch(() => {});
   }
@@ -230,7 +243,7 @@
     state.playing = false; state.token++; clearInterval(tick);
     $("playBtn").textContent = "▶";
     if (voiceEl) voiceEl.pause();
-    if (musicGain) musicGain.gain.setTargetAtTime(0, ctx.currentTime, finished ? 2.5 : .6);
+    if (musicGain) { clearTimeout(previewTimer); previewTimer = null; musicGain.gain.setTargetAtTime(0, ctx.currentTime, finished ? 2.5 : .6); playlist.pause(finished ? 8 : 2); }
     if (state.lock) { state.lock.release().catch(() => {}); state.lock = null; }
     breathe();
     if (finished) {
@@ -243,7 +256,7 @@
   }
   function finish() { commitSession(); stop(true); $("stopBtn").hidden = true; }
   $("playBtn").onclick = () => state.playing ? stop(false) : start();
-  window.THIEN = { start: () => { if (!state.playing) start(); }, isPlaying: () => state.playing };
+  window.THIEN = { start: () => { if (!state.playing) start(); }, isPlaying: () => state.playing, get playlist() { return playlist; } };
   $("stopBtn").onclick = () => { if (state.session) finish(); };
 
   // ---------- meditation log (localStorage) ----------

@@ -141,3 +141,5 @@ details.list.remind,details.list.install{margin-top:14px}
 @media (prefers-reduced-motion:reduce){.share-arrow{animation:none}.sheet{transition:none}}
 
 .tagline-vi{margin:.35em 0 0;color:var(--txt);opacity:.85;font-size:.95rem;letter-spacing:.04em}
+footer .credits{display:inline-block;font-size:.7rem;opacity:.85;max-width:680px;margin:4px auto}
+footer .credits a{color:inherit}

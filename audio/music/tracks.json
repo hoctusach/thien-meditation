@@ -1,0 +1,56 @@
+[
+ {
+  "id": "gymnopedie",
+  "vi": "Gymnopédie số 1",
+  "en": "Satie – Gymnopédie No. 1",
+  "by": "Erik Satie · Robin Alciatore (piano, Musopen)",
+  "lic": "Public domain",
+  "licurl": "https://commons.wikimedia.org/wiki/Template:PD-author",
+  "page": "https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg"
+ },
+ {
+  "id": "bach-prelude",
+  "vi": "Khúc dạo đầu Đô trưởng",
+  "en": "Bach – Prelude in C major, BWV 846",
+  "by": "J. S. Bach · Kimiko Ishizaka (piano)",
+  "lic": "CC0 1.0",
+  "licurl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "page": "https://commons.wikimedia.org/wiki/File:Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier,_Book_1_-_01_Prelude_No._1_in_C_major,_BWV_846.ogg"
+ },
+ {
+  "id": "air",
+  "vi": "Khúc Air (dây đàn Sol)",
+  "en": "Bach – Air on the G String",
+  "by": "J. S. Bach · U.S. Air Force Strings",
+  "lic": "Public domain (U.S. Government work)",
+  "licurl": "https://commons.wikimedia.org/wiki/Template:PD-USGov-Military-Air_Force",
+  "page": "https://commons.wikimedia.org/wiki/File:Air_-_Air_Force_Strings_-_United_States_Air_Force_Band.mp3"
+ },
+ {
+  "id": "nocturne",
+  "vi": "Dạ khúc Mi giáng trưởng",
+  "en": "Chopin – Nocturne Op. 9 No. 2",
+  "by": "F. Chopin · Frank Levy (piano, Musopen)",
+  "lic": "Public domain",
+  "licurl": "https://creativecommons.org/publicdomain/mark/1.0/",
+  "page": "https://commons.wikimedia.org/wiki/File:Nocturne_in_E_flat_major,_Op._9_no._2.mp3"
+ },
+ {
+  "id": "traumerei",
+  "vi": "Mơ mộng (Träumerei)",
+  "en": "Schumann – Träumerei",
+  "by": "R. Schumann · Musopen (piano)",
+  "lic": "Public domain",
+  "licurl": "https://commons.wikimedia.org/wiki/Template:PD-author",
+  "page": "https://commons.wikimedia.org/wiki/File:Robert_Schumann_-_scenes_from_childhood,_op._15_-_vii._dreaming.ogg"
+ },
+ {
+  "id": "impromptu",
+  "vi": "Ngẫu hứng thiền",
+  "en": "Meditation Impromptu 02",
+  "by": "Kevin MacLeod (incompetech.com)",
+  "lic": "CC BY 3.0",
+  "licurl": "https://creativecommons.org/licenses/by/3.0/",
+  "page": "https://commons.wikimedia.org/wiki/File:Meditation_Impromptu_02_(ISRC_USUAN1100162).mp3"
+ }
+]

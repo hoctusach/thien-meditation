@@ -8,8 +8,7 @@ Trang web tĩnh (HTML/CSS/JS, không cần build).
 - `audio/vi_XX.mp3` — VieNeu-TTS v3 Turbo, preset “Thục Đoan” (Nữ · miền Nam), tempo 0.86.
 - `audio/en_XX.mp3` — Microsoft Edge neural TTS en-US-AvaNeural, rate −15%.
 - `samples/` — mẫu 3 giọng nữ miền Nam.
-- Nhạc nền (`music.js`): 6 bài tạo trực tiếp bằng Web Audio (không dùng file nhạc, không vướng bản quyền), tự xoay vòng mỗi ~3 phút (chỉ tính lúc đang phát), chuyển bài êm (crossfade 6s). Có ‹ › để đổi bài, menu chọn bài, và chế độ “Giữ 1 bài”.
-  1. Bình yên · Calm pad (đúng bản nhạc gốc) 2. Giọt nắng · Kalimba 3. Dương cầm êm · Soft piano 4. Mưa rừng · Rain & birds 5. Ấm áp · Warm pad 6. Suối nhỏ · Little stream
+- Nhạc nền (`music.js`): **6 bản nhạc không lời thật** (public domain / CC0 / CC BY), phát lần lượt từng bài trọn vẹn rồi chuyển bài êm (crossfade 6s); chế độ “Lặp 1 bài”. Có ‹ › và menu chọn bài; khi chưa bắt đầu thiền, đổi bài sẽ phát thử 20s. Nhạc tự giảm nhẹ (~3 dB) khi giọng đọc. Xem mục “Nhạc nền” bên dưới.
 - Chuông: tiếng chuông nhỏ, ngắn (~3s), tổng hợp bằng Web Audio; mặc định **mỗi 5 phút** (chỉ reo trong khoảng lặng, không đè lên giọng đọc), có thể Tắt / 3' / chỉ đầu-cuối.
 - Mỗi câu Việt và mỗi câu Anh là một câu riêng (80 câu), sau mỗi câu là khoảng lặng 12s / 40s / 60s / 2' / 5' (mặc định 12s).
 - Hẹn giờ mặc định 10 phút; hết giờ vẫn tự chạy tiếp (đồng hồ hiện `10:00 +m:ss`) cho đến khi bấm ■ Kết thúc. Bỏ chọn “Hết giờ vẫn chạy tiếp” để dừng đúng giờ.
@@ -37,6 +36,20 @@ Trong app: “⏰ Nhắc nhở hằng ngày” → chọn giờ → bật. Có 4
    - Actions tab → bật workflows nếu được hỏi → “Daily meditation reminder” → **Run workflow** để gửi thử.
    - Giới hạn: GitHub chạy lịch “cố gắng hết sức” (thường trễ 5–30 phút); repo public không có hoạt động 60 ngày sẽ bị tắt lịch — workflow có job keepalive hằng tuần tự commit mỗi 30 ngày.
    - Thông báo dùng âm thanh mặc định của hệ thống (web không thể đặt âm chuông riêng); bấm vào thông báo sẽ mở app và reo 5 hồi chuông.
+
+## Nhạc nền
+File trong `audio/music/` (MP3 112 kbps stereo, chuẩn hoá −24 LUFS, nén động nhẹ, ~17 MB tổng, ~20 phút). Tạo lại bằng `python3 tools/build_music.py` (tải từ Wikimedia Commons; `SAMPLES=1` để tạo thêm đoạn nghe thử 25s trong `samples/music/`). Service worker **không** tải trước nhạc: mỗi bài được lưu vào cache riêng (`thien-music-…`) lần đầu phát, sau đó nghe offline được.
+
+| # | Bài | Phong cách | Tác giả · Trình bày | Giấy phép | Nguồn |
+|---|---|---|---|---|---|
+| 1 | Satie – Gymnopédie No. 1 (Gymnopédie số 1) | dương cầm chậm, thanh thoát | Erik Satie · Robin Alciatore (piano, Musopen) | [Public domain](https://commons.wikimedia.org/wiki/Template:PD-author) | [Commons](https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg) |
+| 2 | Bach – Prelude in C major, BWV 846 (Khúc dạo đầu Đô trưởng) | dương cầm rải hợp âm đều, sáng và ấm | J. S. Bach · Kimiko Ishizaka (piano) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | [Commons](https://commons.wikimedia.org/wiki/File:Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier,_Book_1_-_01_Prelude_No._1_in_C_major,_BWV_846.ogg) |
+| 3 | Bach – Air on the G String (Khúc Air (dây đàn Sol)) | dàn dây êm, giai điệu dài | J. S. Bach · U.S. Air Force Strings | [Public domain (U.S. Government work)](https://commons.wikimedia.org/wiki/Template:PD-USGov-Military-Air_Force) | [Commons](https://commons.wikimedia.org/wiki/File:Air_-_Air_Force_Strings_-_United_States_Air_Force_Band.mp3) |
+| 4 | Chopin – Nocturne Op. 9 No. 2 (Dạ khúc Mi giáng trưởng) | dương cầm trữ tình, du dương | F. Chopin · Frank Levy (piano, Musopen) | [Public domain](https://creativecommons.org/publicdomain/mark/1.0/) | [Commons](https://commons.wikimedia.org/wiki/File:Nocturne_in_E_flat_major,_Op._9_no._2.mp3) |
+| 5 | Schumann – Träumerei (Mơ mộng (Träumerei)) | dương cầm ấm, dịu dàng | R. Schumann · Musopen (piano) | [Public domain](https://commons.wikimedia.org/wiki/Template:PD-author) | [Commons](https://commons.wikimedia.org/wiki/File:Robert_Schumann_-_scenes_from_childhood,_op._15_-_vii._dreaming.ogg) |
+| 6 | Meditation Impromptu 02 (Ngẫu hứng thiền) | dương cầm ngẫu hứng, viết riêng cho thiền/thư giãn | Kevin MacLeod (incompetech.com) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | [Commons](https://commons.wikimedia.org/wiki/File:Meditation_Impromptu_02_(ISRC_USUAN1100162).mp3) |
+
+Ghi công (cũng hiện ở cuối trang): *“Meditation Impromptu 02” Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 3.0 — http://creativecommons.org/licenses/by/3.0/*. Các bản thu Musopen là public domain; Musopen đề nghị ghi nguồn — đã ghi.
 
 ## Tiếng chuông
 3 tiếng chuông, đều do `tools/build_bells.py` tự tổng hợp bằng numpy (tổng hợp theo mode: mỗi hoạ âm có tần số, độ lớn và tốc độ tắt riêng) — **không dùng bất kỳ mẫu âm thanh nào của bên thứ ba, không có ràng buộc bản quyền** (tự tạo, dùng tự do).
