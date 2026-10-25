@@ -35,3 +35,16 @@ Trong app: “⏰ Nhắc nhở hằng ngày” → chọn giờ → bật. Có 4
    - Actions tab → bật workflows nếu được hỏi → “Daily meditation reminder” → **Run workflow** để gửi thử.
    - Giới hạn: GitHub chạy lịch “cố gắng hết sức” (thường trễ 5–30 phút); repo public không có hoạt động 60 ngày sẽ bị tắt lịch — workflow có job keepalive hằng tuần tự commit mỗi 30 ngày.
    - Thông báo dùng âm thanh mặc định của hệ thống (web không thể đặt âm chuông riêng); bấm vào thông báo sẽ mở app và reo 5 hồi chuông.
+
+## Tiếng chuông
+6 tiếng chuông, đều do `tools/build_bells.py` tự tổng hợp (cộng các hoạ âm bằng numpy, đánh mềm, ngân dài, lọc bớt âm chói) — **không dùng mẫu âm thanh của bên thứ ba, không có ràng buộc bản quyền**.
+| id | Tên | Độ ngân |
+|---|---|---|
+| temple | Chuông chùa trầm (mặc định) | ~12s |
+| bowl | Chuông bát ấm | ~12s |
+| gong | Cồng êm | ~11s |
+| chime | Chuông gió ngân | ~10s |
+| wood | Chuông gỗ ấm | ~8s |
+| bright | Chuông sáng (ngắn) — tiếng cũ | ~4s |
+Mỗi chuông có `audio/bells/<id>.mp3` (1 hồi) và `<id>-x5.mp3` (5 hồi chậm, cách ~7,5s) dùng cho nhắc nhở hằng ngày. `audio/bell5.mp3` = bản 5 hồi của chuông mặc định. Mẫu nghe thử: `samples/bells/`.
+Thời gian mặc định: **Không giới hạn** (đồng hồ đếm lên từ 00:00).

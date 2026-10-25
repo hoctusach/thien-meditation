@@ -2,7 +2,7 @@
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
-  const state = { breathPat: "478", lang: "both", dur: 10, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, trackSec: 0, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
+  const state = { breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, trackSec: 0, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
 
   // ---------- items: every VI line and every EN line is its own quote ----------
   const ITEMS = [];
@@ -44,7 +44,9 @@
     const pos = state.order.findIndex(k => k > curK);   // continue with the next allowed quote
     state.idx = pos < 0 ? 0 : pos;
   });
-  seg("durSeg", "dur", () => { state.goalNoted = state.dur > 0 && state.elapsed >= state.dur * 60; showTime(); });
+  seg("durSeg", "dur", () => { state.goalNoted = state.dur > 0 && state.elapsed >= state.dur * 60; showTime(); try { localStorage.setItem("thien.dur.v2", state.dur); } catch (e) {} });
+  // duration: default is unlimited; new storage key so everyone starts on "Không giới hạn" once
+  try { const d = localStorage.getItem("thien.dur.v2"); if (d !== null) { state.dur = Number(d); document.querySelectorAll("#durSeg button").forEach(b => b.classList.toggle("on", Number(b.dataset.v) === state.dur)); } } catch (e) {}
   seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } });
   seg("toneSeg", "tone", () => music && music.setTone(state.tone));
   $("shuffle").onchange = () => { makeOrder(); state.idx = 0; };
@@ -73,16 +75,42 @@
   function createMusic(ctx) {
     return {
       setTone(f) { playlist && playlist.setTone(f); },
-      // Short, bright chime (small bell) — about 3 seconds, no drone.
-      bell() {
-        const t0 = ctx.currentTime + .03;
-        [[2, .13, 3], [5.4, .05, 1.6], [8.9, .025, .9]].forEach(([m, a, d]) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = state.tone * m; o.type = "sine";
-          g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(a, t0 + .005); g.gain.exponentialRampToValueAtTime(.0001, t0 + d);
-          o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + d + .1); });
-        state.lastBell = Date.now();
-      }
+      // Chosen bell sound (pre-rendered, warm, long decay) — see tools/build_bells.py
+      bell(id) { playBellSound(id || state.bellSound); state.lastBell = Date.now(); }
     };
   }
+
+  // ---------- bell sounds ----------
+  const BELL_SOUNDS = [
+    { id: "temple", vi: "Chuông chùa trầm", en: "Deep temple bell" },
+    { id: "bowl", vi: "Chuông bát ấm", en: "Warm singing bowl" },
+    { id: "gong", vi: "Cồng êm", en: "Soft gong" },
+    { id: "chime", vi: "Chuông gió ngân", en: "Gentle long chime" },
+    { id: "wood", vi: "Chuông gỗ ấm", en: "Warm wooden bell" },
+    { id: "bright", vi: "Chuông sáng (ngắn)", en: "Bright short chime" },
+  ];
+  window.BELL_SOUNDS = BELL_SOUNDS;
+  const bellBufs = {};
+  let bellGain = null;
+  const bv = () => Math.pow($("bellVol").value / 100, 1.5) * 1.6;
+  function loadBell(id) {
+    if (!bellBufs[id]) bellBufs[id] = fetch(`audio/bells/${id}.mp3`).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => ctx.decodeAudioData(b, ok, no))).catch(e => { delete bellBufs[id]; throw e; });
+    return bellBufs[id];
+  }
+  async function playBellSound(id) {
+    initAudio();
+    if (!bellGain) { bellGain = ctx.createGain(); bellGain.connect(master); }
+    bellGain.gain.value = bv();
+    try { const buf = await loadBell(id); const s = ctx.createBufferSource(); s.buffer = buf; s.connect(bellGain); s.start(); } catch (e) { console.warn("bell", e); }
+  }
+  state.bellSound = (() => { try { return localStorage.getItem("thien.bellSound") || "temple"; } catch (e) { return "temple"; } })();
+  if (!BELL_SOUNDS.some(b => b.id === state.bellSound)) state.bellSound = "temple";
+  $("bellSound").innerHTML = BELL_SOUNDS.map(b => `<option value="${b.id}">${b.vi} · ${b.en}</option>`).join("");
+  $("bellSound").value = state.bellSound;
+  $("bellSound").onchange = () => { state.bellSound = $("bellSound").value; try { localStorage.setItem("thien.bellSound", state.bellSound); } catch (e) {} playBellSound(state.bellSound); };
+  $("bellPreview").onclick = () => { initAudio(); ctx.resume(); playBellSound(state.bellSound); };
+  try { const v = localStorage.getItem("thien.bellVol"); if (v !== null) $("bellVol").value = v; } catch (e) {}
+  $("bellVol").oninput = () => { if (bellGain) bellGain.gain.value = bv(); try { localStorage.setItem("thien.bellVol", $("bellVol").value); } catch (e) {} };
 
   // ---------- now playing (music playlist UI) ----------
   const TR = window.MUSIC_TRACKS || [];
@@ -122,7 +150,8 @@
   const msss = s => `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`;
   const showTime = () => {
     const goal = state.dur * 60, e = state.elapsed;
-    $("timeLeft").textContent = state.dur === 0 ? `∞ ${mmss(e)}` : e < goal ? mmss(goal - e) : `${mmss(goal)} +${msss(e - goal)}`;
+    const up = s => s >= 3600 ? `${Math.floor(s / 3600)}:${mmss(s % 3600)}` : mmss(s);
+    $("timeLeft").textContent = state.dur === 0 ? up(e) : e < goal ? mmss(goal - e) : `${mmss(goal)} +${msss(e - goal)}`;
   };
   showTime();
 
@@ -159,8 +188,8 @@
       if (state.dur && state.elapsed >= state.dur * 60 && !state.goalNoted) {
         state.goalNoted = true;
         if (!$("keepGoing").checked) return "done";
-        if (state.bell !== 0 && left > 2500) music.bell();        // gentle "goal reached" chime, then keep going
-      } else if (state.bell > 0 && left > 2500 && Date.now() - state.lastBell >= state.bell * 60000) {
+        if (state.bell !== 0 && left > 6000) music.bell();        // gentle "goal reached" chime, then keep going
+      } else if (state.bell > 0 && left > 6000 && Date.now() - state.lastBell >= state.bell * 60000) {
         music.bell();                                              // only ever inside the pause, never over speech
       }
     }
@@ -169,7 +198,7 @@
   async function runLoop() {
     const tok = ++state.token;
     voiceEl.pause();
-    if (state.bell !== 0 && state.freshStart) { state.freshStart = false; music.bell(); if (!await wait(3000, tok)) return; }
+    if (state.bell !== 0 && state.freshStart) { state.freshStart = false; music.bell(); if (!await wait(5000, tok)) return; }
     else await wait(1200, tok);
     while (state.playing && tok === state.token) {
       if (!state.order.length) makeOrder();

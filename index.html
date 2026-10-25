@@ -61,11 +61,11 @@
     <div class="row">
       <label>Thời gian <small>Duration</small></label>
       <div class="seg" id="durSeg">
+        <button data-v="0" class="on">Không giới hạn <small>Unlimited</small></button>
         <button data-v="5">5'</button>
-        <button data-v="10" class="on">10'</button>
+        <button data-v="10">10'</button>
         <button data-v="15">15'</button>
         <button data-v="20">20'</button>
-        <button data-v="0">∞</button>
       </div>
     </div>
     <div class="row">
@@ -96,6 +96,12 @@
         <button data-v="-1">Đầu/cuối <small>Start/end</small></button>
       </div>
     </div>
+    <div class="row">
+      <label>Tiếng chuông <small>Bell sound</small></label>
+      <select id="bellSound" class="sel" aria-label="Tiếng chuông / Bell sound"></select>
+      <button id="bellPreview" class="pill" aria-label="Nghe thử / Preview">▶ Nghe thử</button>
+    </div>
+    <div class="row slider"><label for="bellVol">🔔 Chuông <small>Bell</small></label><input id="bellVol" type="range" min="0" max="100" value="45"></div>
     <div class="row slider"><label for="musicVol">🎵 Nhạc <small>Music</small></label><input id="musicVol" type="range" min="0" max="100" value="45"></div>
     <div class="row slider"><label for="voiceVol">🗣️ Giọng <small>Voice</small></label><input id="voiceVol" type="range" min="0" max="100" value="90"></div>
     <div class="row">
