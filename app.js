@@ -2,41 +2,57 @@
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
-  const state = { lang: "both", dur: 10, tone: 432, bell: 0, lastBell: 0, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
+  const state = { lang: "both", dur: 10, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, trackSec: 0, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
 
-  // ---------- list ----------
-  $("total").textContent = A.length;
-  A.forEach((a, i) => {
+  // ---------- items: every VI line and every EN line is its own quote ----------
+  const ITEMS = [];
+  A.forEach((a, n) => { ITEMS.push({ n, lang: "vi", text: a.vi, own: a.group === "Của bạn" }); ITEMS.push({ n, lang: "en", text: a.en, own: a.group === "Của bạn" }); });
+  const fileOf = it => `audio/${it.lang}_${pad(it.n + 1)}.mp3`;
+  const allowed = it => state.lang === "both" || state.lang === it.lang;
+  $("total").textContent = ITEMS.length;
+  ITEMS.forEach((it, k) => {
     const li = document.createElement("li");
-    li.innerHTML = `${a.vi}<span>${a.en}</span>`;
-    li.onclick = () => { state.idx = state.order.indexOf(i); if (state.idx < 0) state.idx = 0; if (!state.playing) start(); else { state.token++; runLoop(); } };
+    li.dataset.lang = it.lang;
+    li.innerHTML = `<em class="tag">${it.lang === "vi" ? "VI" : "EN"}</em> ${it.text}`;
+    li.onclick = () => {
+      if (!allowed(it)) return;
+      state.idx = Math.max(0, state.order.indexOf(k));
+      if (!state.playing) start(); else { state.token++; runLoop(); }
+    };
     $("allLines").appendChild(li);
   });
   const makeOrder = () => {
-    state.order = A.map((_, i) => i);
+    let ord = ITEMS.map((_, k) => k).filter(k => allowed(ITEMS[k]));
     if ($("shuffle").checked) {
-      const own = state.order.filter(i => A[i].group === "Của bạn");
-      const rest = state.order.filter(i => A[i].group !== "Của bạn");
+      const own = ord.filter(k => ITEMS[k].own), rest = ord.filter(k => !ITEMS[k].own);
       for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
-      state.order = own.concat(rest);
+      ord = own.concat(rest);
     }
+    state.order = ord;
+    document.querySelectorAll("#allLines li").forEach((li, k) => li.classList.toggle("off", !allowed(ITEMS[k])));
   };
   makeOrder();
 
   // ---------- segmented controls ----------
   const seg = (id, key, cb) => $(id).querySelectorAll("button").forEach(b => b.onclick = () => {
     $(id).querySelectorAll("button").forEach(x => x.classList.remove("on")); b.classList.add("on");
-    state[key] = key === "lang" ? b.dataset.v : Number(b.dataset.v); cb && cb();
+    state[key] = key === "lang" ? b.dataset.v : key === "auto" ? b.dataset.v === "1" : Number(b.dataset.v); cb && cb();
   });
-  seg("langSeg", "lang");
+  seg("langSeg", "lang", () => {
+    const curK = state.curK ?? -1;
+    makeOrder();
+    const pos = state.order.findIndex(k => k > curK);   // continue with the next allowed quote
+    state.idx = pos < 0 ? 0 : pos;
+  });
   seg("durSeg", "dur", () => { state.goalNoted = state.dur > 0 && state.elapsed >= state.dur * 60; showTime(); });
   seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } });
   seg("toneSeg", "tone", () => music && music.setTone(state.tone));
   $("shuffle").onchange = () => { makeOrder(); state.idx = 0; };
-  $("gap").oninput = () => $("gapVal").textContent = $("gap").value + "s";
+  seg("gapSeg", "gap");
+  seg("autoSeg", "auto", () => { state.trackSec = 0; });
 
   // ---------- audio graph ----------
-  let ctx, master, musicGain, voiceGain, music, voiceEl;
+  let ctx, master, musicGain, voiceGain, music, voiceEl, playlist;
   function initAudio() {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -46,41 +62,17 @@
     voiceEl = new Audio(); voiceEl.preload = "auto";
     try { ctx.createMediaElementSource(voiceEl).connect(voiceGain); } catch (e) { /* fallback: element volume */ }
     music = createMusic(ctx, musicGain);
-    music.setTone(state.tone);
+    playlist = createPlaylist(ctx, musicGain, () => state.tone, (i, t) => { state.trackSec = 0; showTrack(); });
+    playlist.play(0);
   }
   $("musicVol").oninput = () => { if (musicGain && state.playing) musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, .3); };
   $("voiceVol").oninput = () => { if (voiceGain) voiceGain.gain.value = $("voiceVol").value / 100; if (voiceEl) voiceEl.volume = 1; };
   const mv = () => Math.pow($("musicVol").value / 100, 1.6) * 0.5;
 
-  // Ambient generative pad: soft detuned chord on the chosen base tone + gentle filtered noise + echo.
-  function createMusic(ctx, out) {
-    const bus = ctx.createGain(); bus.gain.value = 1;
-    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1200; lp.Q.value = .3;
-    const delay = ctx.createDelay(4); delay.delayTime.value = 1.7;
-    const fb = ctx.createGain(); fb.gain.value = .42;
-    const wet = ctx.createGain(); wet.gain.value = .35;
-    bus.connect(lp); lp.connect(out); lp.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(out);
-    const lfo = ctx.createOscillator(); lfo.frequency.value = .05; const lfoAmt = ctx.createGain(); lfoAmt.gain.value = 500;
-    lfo.connect(lfoAmt); lfoAmt.connect(lp.frequency); lfo.start();
-    // ratios: root(low), fifth, octave, major tenth, a high shimmer
-    const ratios = [0.5, 0.75, 1, 1.25, 1.5, 2];
-    const levels = [.16, .08, .10, .05, .04, .02];
-    const voices = ratios.map((r, i) => {
-      const g = ctx.createGain(); g.gain.value = levels[i]; g.connect(bus);
-      const oscs = [-4, 4].map(det => { const o = ctx.createOscillator(); o.type = i === 0 ? "sine" : "triangle"; o.detune.value = det; o.connect(g); o.start(); return o; });
-      const sw = ctx.createOscillator(); sw.frequency.value = 0.03 + i * 0.017; const swg = ctx.createGain(); swg.gain.value = levels[i] * .7;
-      sw.connect(swg); swg.connect(g.gain); sw.start();
-      return { r, oscs };
-    });
-    // soft pink-ish noise "breath of the ocean"
-    const len = ctx.sampleRate * 4, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
-    let b0 = 0, b1 = 0, b2 = 0; for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; b0 = .99765 * b0 + w * .0990460; b1 = .96300 * b1 + w * .2965164; b2 = .57000 * b2 + w * 1.0526913; d[i] = (b0 + b1 + b2 + w * .1848) * .05; }
-    const ns = ctx.createBufferSource(); ns.buffer = buf; ns.loop = true;
-    const nf = ctx.createBiquadFilter(); nf.type = "lowpass"; nf.frequency.value = 500;
-    const ng = ctx.createGain(); ng.gain.value = .25; const nl = ctx.createOscillator(); nl.frequency.value = .08; const nlg = ctx.createGain(); nlg.gain.value = .18;
-    nl.connect(nlg); nlg.connect(ng.gain); nl.start(); ns.connect(nf); nf.connect(ng); ng.connect(out); ns.start();
+  // Bell only — background music lives in music.js (playlist).
+  function createMusic(ctx) {
     return {
-      setTone(f) { voices.forEach(v => v.oscs.forEach(o => o.frequency.setTargetAtTime(f * v.r, ctx.currentTime, 1.5))); },
+      setTone(f) { playlist && playlist.setTone(f); },
       // Short, bright chime (small bell) — about 3 seconds, no drone.
       bell() {
         const t0 = ctx.currentTime + .03;
@@ -91,6 +83,21 @@
       }
     };
   }
+
+  // ---------- now playing (music playlist UI) ----------
+  const TR = window.MUSIC_TRACKS || [];
+  TR.forEach((t, i) => { const o = document.createElement("option"); o.value = i; o.textContent = `${i + 1}. ${t.vi} · ${t.en}`; $("trackSel").appendChild(o); });
+  function showTrack() {
+    const i = playlist ? playlist.current : 0, t = TR[i] || {};
+    $("trackName").innerHTML = `${t.vi || ""} <small>${t.en || ""}</small>`;
+    $("trackSel").value = i;
+  }
+  showTrack();
+  const goTrack = f => { initAudio(); ctx.resume(); f(); };
+  $("prevTrack").onclick = () => goTrack(() => playlist.prev());
+  $("nextTrack").onclick = () => goTrack(() => playlist.next());
+  $("trackSel").onchange = () => goTrack(() => playlist.play(Number($("trackSel").value)));
+  const TRACK_SEC = 180;   // each piece plays ~3 minutes, then crossfades to the next
 
   // ---------- breathing animation (4s in · 2s hold · 6s out) ----------
   let breathTimer;
@@ -127,11 +134,34 @@
       voiceEl.play().catch(done);
     });
   }
-  function show(a) {
+  function show(it) {
     const box = document.querySelector(".lines");
     box.classList.add("fade");
-    setTimeout(() => { $("lineVi").textContent = state.lang === "en" ? "" : a.vi; $("lineEn").textContent = state.lang === "vi" ? a.en : a.en; box.classList.remove("fade"); }, 500);
-    document.querySelectorAll("#allLines li").forEach((li, i) => li.classList.toggle("cur", A[i] === a));
+    setTimeout(() => {
+      $("lineVi").textContent = it.text; $("lineVi").lang = it.lang;
+      $("lineVi").className = it.lang === "vi" ? "vi" : "vi is-en";
+      $("lineTag").textContent = it.lang === "vi" ? "Tiếng Việt" : "English";
+      $("lineEn").textContent = "";
+      box.classList.remove("fade");
+    }, 500);
+    const k = ITEMS.indexOf(it);
+    document.querySelectorAll("#allLines li").forEach((li, i) => li.classList.toggle("cur", i === k));
+  }
+  // the pause after each quote; returns false if interrupted, "done" if the session should finish
+  async function pauseAfter(tok) {
+    const end = Date.now() + state.gap * 1000;
+    while (Date.now() < end) {
+      if (!await wait(Math.min(1000, end - Date.now()), tok)) return false;
+      const left = end - Date.now();
+      if (state.dur && state.elapsed >= state.dur * 60 && !state.goalNoted) {
+        state.goalNoted = true;
+        if (!$("keepGoing").checked) return "done";
+        if (state.bell !== 0 && left > 2500) music.bell();        // gentle "goal reached" chime, then keep going
+      } else if (state.bell > 0 && left > 2500 && Date.now() - state.lastBell >= state.bell * 60000) {
+        music.bell();                                              // only ever inside the pause, never over speech
+      }
+    }
+    return true;
   }
   async function runLoop() {
     const tok = ++state.token;
@@ -139,23 +169,18 @@
     if (state.bell !== 0 && state.freshStart) { state.freshStart = false; music.bell(); if (!await wait(3000, tok)) return; }
     else await wait(1200, tok);
     while (state.playing && tok === state.token) {
+      if (!state.order.length) makeOrder();
       if (state.idx >= state.order.length) { if (!$("loop").checked) { finish(); return; } makeOrder(); state.idx = 0; }
-      const n = state.order[state.idx], a = A[n], id = pad(n + 1);
-      $("counter").textContent = `· ${state.idx + 1}/${A.length}`;
-      show(a);
-      await wait(700, tok);
-      if (state.lang !== "en") { if (!await playFile(`audio/vi_${id}.mp3`, tok)) return; }
-      if (state.lang === "both") { if (!await wait(1400, tok)) return; }
-      if (state.lang !== "vi") { if (!await playFile(`audio/en_${id}.mp3`, tok)) return; }
-      state.idx++;
-      if (!await wait($("gap").value * 1000, tok)) return;
-      if (state.dur && state.elapsed >= state.dur * 60 && !state.goalNoted) {
-        state.goalNoted = true;
-        if (!$("keepGoing").checked) { finish(); return; }
-        if (state.bell !== 0) { music.bell(); if (!await wait(3000, tok)) return; }   // gentle "goal reached" chime, then keep going
-      } else if (state.bell > 0 && Date.now() - state.lastBell >= state.bell * 60000) {
-        music.bell(); if (!await wait(3000, tok)) return;
-      }
+      const it = ITEMS[state.curK = state.order[state.idx]];
+      $("counter").textContent = `· ${state.idx + 1}/${state.order.length}`;
+      show(it);
+      if (!await wait(700, tok)) return;
+      if (!await playFile(fileOf(it), tok)) return;
+      const p = state.order.indexOf(state.curK);
+      if (p >= 0) state.idx = p + 1;                   // (if the language filter changed mid-quote, idx is already set)
+      const r = await pauseAfter(tok);
+      if (!r) return;
+      if (r === "done") { finish(); return; }
     }
   }
   function start() {
@@ -167,7 +192,8 @@
     musicGain.gain.cancelScheduledValues(ctx.currentTime);
     musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, 1.5);
     clearInterval(tick);
-    tick = setInterval(() => { if (!state.playing) return; state.elapsed++; state.session.sec++; saveCurrent(); showTime(); }, 1000);
+    tick = setInterval(() => { if (!state.playing) return; state.elapsed++; state.session.sec++; saveCurrent(); showTime();
+      if (state.auto && ++state.trackSec >= TRACK_SEC) playlist.next(); }, 1000);
     breathe(); runLoop();
     if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then(l => state.lock = l).catch(() => {});
   }
@@ -180,9 +206,10 @@
     breathe();
     if (finished) {
       if (state.bell !== 0) music.bell();
+      $("lineVi").className = "vi"; $("lineTag").textContent = "";
       $("lineVi").textContent = "Cảm ơn bạn. Mọi điều tốt đẹp đang đến.";
       $("lineEn").textContent = "Thank you. All good things are on their way.";
-      state.idx = 0; state.elapsed = 0; state.goalNoted = false; showTime(); $("counter").textContent = "";
+      state.idx = 0; state.curK = undefined; state.elapsed = 0; state.goalNoted = false; showTime(); $("counter").textContent = "";
     }
   }
   function finish() { commitSession(); stop(true); $("stopBtn").hidden = true; }

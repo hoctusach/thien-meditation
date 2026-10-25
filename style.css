@@ -70,3 +70,15 @@ details.panel[open]>summary{margin-bottom:6px}
 .clear{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--muted);border-radius:999px;padding:6px 14px;font:inherit;font-size:.85rem;cursor:pointer}
 @media (min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
 #logList li span{display:inline;font-style:normal;font-size:.9rem;color:var(--txt)}
+.nowplaying{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;font-size:.88rem;color:var(--muted)}
+.nowplaying small{opacity:.8;font-size:.85em}
+.nowplaying button{background:transparent;border:none;color:var(--gold);font-size:1.5rem;line-height:1;cursor:pointer;padding:4px 6px;opacity:.85}
+.nowplaying button:hover{opacity:1}
+.sel{flex:1;max-width:280px;background:rgba(255,255,255,.08);color:var(--txt);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:6px 10px;font:inherit;font-size:.85rem}
+.sel option{color:#222}
+.vi.is-en{font-style:italic}
+.tagline{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);opacity:.75;margin:0 0 .6em;min-height:1em}
+.tag{font-style:normal;font-size:.68rem;letter-spacing:.08em;padding:1px 6px;border-radius:6px;background:rgba(243,217,164,.18);color:var(--gold);margin-right:4px;vertical-align:1px}
+#allLines li[data-lang="en"]{color:var(--muted);font-style:italic}
+#allLines li.off{opacity:.35;cursor:default}
+#allLines li.cur{color:var(--gold)}

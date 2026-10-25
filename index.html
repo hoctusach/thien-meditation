@@ -23,10 +23,16 @@
       <div id="breathText" class="breath-text">Sẵn sàng<small>Ready</small></div>
     </div>
     <div class="lines" aria-live="polite">
+      <p id="lineTag" class="tagline"></p>
       <p id="lineVi" class="vi">Hít thở sâu, và bắt đầu khi bạn sẵn sàng.</p>
       <p id="lineEn" class="en">Take a deep breath, and begin when you are ready.</p>
     </div>
     <div class="timer"><span id="timeLeft">10:00</span> <span id="counter" class="muted"></span></div>
+    <div class="nowplaying">
+      <button id="prevTrack" aria-label="Bài trước / Previous track">‹</button>
+      <span>🎵 <span id="trackName"></span></span>
+      <button id="nextTrack" aria-label="Bài sau / Next track">›</button>
+    </div>
     <div class="controls"><button id="playBtn" class="play" aria-label="Bắt đầu / Tạm dừng · Start / Pause">▶</button><button id="stopBtn" class="stop" hidden aria-label="Kết thúc buổi thiền / End session">■</button></div>
   </section>
 
@@ -51,7 +57,18 @@
       </div>
     </div>
     <div class="row">
-      <label>Nhạc nền <small>Music</small></label>
+      <label>Bài nhạc <small>Track</small></label>
+      <select id="trackSel" class="sel" aria-label="Chọn bài nhạc / Choose track"></select>
+    </div>
+    <div class="row">
+      <label>Xoay vòng <small>Rotate</small></label>
+      <div class="seg" id="autoSeg">
+        <button data-v="1" class="on">Tự động <small>Auto · 3'</small></button>
+        <button data-v="0">Giữ 1 bài <small>Repeat one</small></button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Tần số <small>Base tone</small></label>
       <div class="seg" id="toneSeg">
         <button data-v="432" class="on">432 Hz</button>
         <button data-v="528">528 Hz</button>
@@ -61,15 +78,24 @@
     <div class="row">
       <label>Chuông <small>Bell</small></label>
       <div class="seg" id="bellSeg">
-        <button data-v="0" class="on">Tắt <small>Off</small></button>
+        <button data-v="0">Tắt <small>Off</small></button>
         <button data-v="3">3'</button>
-        <button data-v="5">5'</button>
+        <button data-v="5" class="on">5'</button>
         <button data-v="-1">Đầu/cuối <small>Start/end</small></button>
       </div>
     </div>
     <div class="row slider"><label for="musicVol">🎵 Nhạc <small>Music</small></label><input id="musicVol" type="range" min="0" max="100" value="45"></div>
     <div class="row slider"><label for="voiceVol">🗣️ Giọng <small>Voice</small></label><input id="voiceVol" type="range" min="0" max="100" value="90"></div>
-    <div class="row slider"><label for="gap">⏳ Khoảng lặng <small>Pause</small></label><input id="gap" type="range" min="2" max="15" value="5"><span id="gapVal" class="muted">5s</span></div>
+    <div class="row">
+      <label>⏳ Khoảng lặng <small>Pause</small></label>
+      <div class="seg" id="gapSeg">
+        <button data-v="12" class="on">12s</button>
+        <button data-v="40">40s</button>
+        <button data-v="60">60s</button>
+        <button data-v="120">2'</button>
+        <button data-v="300">5'</button>
+      </div>
+    </div>
     <div class="row toggles">
       <label class="tg"><input type="checkbox" id="loop" checked> Lặp lại <small>Loop</small></label>
       <label class="tg"><input type="checkbox" id="shuffle"> Xáo trộn <small>Shuffle</small></label>
@@ -98,11 +124,12 @@
 
   <footer>
     Giọng đọc AI: tiếng Việt <b>VieNeu-TTS</b> (giọng miền Nam “Thục Đoan”), English <b>Microsoft Edge neural (Ava)</b>.
-    Nhạc nền được tạo trực tiếp trong trình duyệt (Web Audio).<br>
+    Nhạc nền (6 bài xoay vòng) và tiếng chuông được tạo trực tiếp trong trình duyệt (Web Audio).<br>
     Thở chậm, mỉm cười, và cảm nhận sự đủ đầy. 🪷
   </footer>
 </main>
 <script src="affirmations.js"></script>
+<script src="music.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
