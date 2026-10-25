@@ -2,7 +2,7 @@
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
-  const state = { lang: "both", dur: 10, tone: 432, bell: 3, lastBell: 0, playing: false, idx: 0, order: [], remaining: 600, token: 0 };
+  const state = { lang: "both", dur: 10, tone: 432, bell: 0, lastBell: 0, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
 
   // ---------- list ----------
   $("total").textContent = A.length;
@@ -29,14 +29,14 @@
     state[key] = key === "lang" ? b.dataset.v : Number(b.dataset.v); cb && cb();
   });
   seg("langSeg", "lang");
-  seg("durSeg", "dur", () => { state.remaining = state.dur * 60; showTime(); });
+  seg("durSeg", "dur", () => { state.goalNoted = state.dur > 0 && state.elapsed >= state.dur * 60; showTime(); });
+  seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } });
   seg("toneSeg", "tone", () => music && music.setTone(state.tone));
-  seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(.8); } });
   $("shuffle").onchange = () => { makeOrder(); state.idx = 0; };
   $("gap").oninput = () => $("gapVal").textContent = $("gap").value + "s";
 
   // ---------- audio graph ----------
-  let ctx, master, musicGain, voiceGain, music, voiceEl, delayIn;
+  let ctx, master, musicGain, voiceGain, music, voiceEl;
   function initAudio() {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -59,7 +59,6 @@
     const delay = ctx.createDelay(4); delay.delayTime.value = 1.7;
     const fb = ctx.createGain(); fb.gain.value = .42;
     const wet = ctx.createGain(); wet.gain.value = .35;
-    delayIn = delay;
     bus.connect(lp); lp.connect(out); lp.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(out);
     const lfo = ctx.createOscillator(); lfo.frequency.value = .05; const lfoAmt = ctx.createGain(); lfoAmt.gain.value = 500;
     lfo.connect(lfoAmt); lfoAmt.connect(lp.frequency); lfo.start();
@@ -82,30 +81,12 @@
     nl.connect(nlg); nlg.connect(ng.gain); nl.start(); ns.connect(nf); nf.connect(ng); ng.connect(out); ns.start();
     return {
       setTone(f) { voices.forEach(v => v.oscs.forEach(o => o.frequency.setTargetAtTime(f * v.r, ctx.currentTime, 1.5))); },
-      // Synthesized Tibetan-style singing bowl: inharmonic partials, slow beating, long decay.
-      bell(strength = 1) {
-        if (!ctx) return;
-        const vol = Math.pow($("bellVol").value / 100, 1.4) * 0.32 * strength;
-        if (vol <= 0) return;
-        const t0 = ctx.currentTime + 0.05, base = state.tone / 2;
-        const out = ctx.createGain(); out.gain.value = vol;
-        const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 5000;
-        out.connect(lp); lp.connect(master); lp.connect(delayIn);
-        const partials = [[1, 1, 14], [2.71, .55, 10], [5.14, .28, 7], [8.32, .12, 4.5], [12.1, .05, 3]];
-        partials.forEach(([m, a, dec]) => [-1, 1].forEach(s => {
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.type = "sine"; o.frequency.value = base * m * (1 + s * 0.0018 * m);
-          g.gain.setValueAtTime(0, t0);
-          g.gain.linearRampToValueAtTime(a * .5, t0 + .015);
-          g.gain.exponentialRampToValueAtTime(.0001, t0 + dec);
-          o.connect(g); g.connect(out); o.start(t0); o.stop(t0 + dec + .1);
-        }));
-        // soft strike (mallet) transient
-        const nb = ctx.createBuffer(1, ctx.sampleRate * .08, ctx.sampleRate), nd = nb.getChannelData(0);
-        for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / nd.length, 3);
-        const ns = ctx.createBufferSource(), nf = ctx.createBiquadFilter(), ng = ctx.createGain();
-        ns.buffer = nb; nf.type = "bandpass"; nf.frequency.value = base * 5; nf.Q.value = 2; ng.gain.value = .25;
-        ns.connect(nf); nf.connect(ng); ng.connect(out); ns.start(t0);
+      // Short, bright chime (small bell) — about 3 seconds, no drone.
+      bell() {
+        const t0 = ctx.currentTime + .03;
+        [[2, .13, 3], [5.4, .05, 1.6], [8.9, .025, .9]].forEach(([m, a, d]) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = state.tone * m; o.type = "sine";
+          g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(a, t0 + .005); g.gain.exponentialRampToValueAtTime(.0001, t0 + d);
+          o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + d + .1); });
         state.lastBell = Date.now();
       }
     };
@@ -127,7 +108,12 @@
 
   // ---------- timer ----------
   let tick;
-  const showTime = () => { $("timeLeft").textContent = state.dur === 0 ? "∞" : `${pad(Math.floor(state.remaining / 60))}:${pad(Math.floor(state.remaining % 60))}`; };
+  const mmss = s => `${pad(Math.floor(s / 60))}:${pad(Math.floor(s % 60))}`;
+  const msss = s => `${Math.floor(s / 60)}:${pad(Math.floor(s % 60))}`;
+  const showTime = () => {
+    const goal = state.dur * 60, e = state.elapsed;
+    $("timeLeft").textContent = state.dur === 0 ? `∞ ${mmss(e)}` : e < goal ? mmss(goal - e) : `${mmss(goal)} +${msss(e - goal)}`;
+  };
   showTime();
 
   // ---------- playback ----------
@@ -150,10 +136,10 @@
   async function runLoop() {
     const tok = ++state.token;
     voiceEl.pause();
-    if (state.bell !== 0 && state.freshStart) { state.freshStart = false; music.bell(1); if (!await wait(6500, tok)) return; }
+    if (state.bell !== 0 && state.freshStart) { state.freshStart = false; music.bell(); if (!await wait(3000, tok)) return; }
     else await wait(1200, tok);
     while (state.playing && tok === state.token) {
-      if (state.idx >= state.order.length) { if (!$("loop").checked) { stop(true); return; } makeOrder(); state.idx = 0; }
+      if (state.idx >= state.order.length) { if (!$("loop").checked) { finish(); return; } makeOrder(); state.idx = 0; }
       const n = state.order[state.idx], a = A[n], id = pad(n + 1);
       $("counter").textContent = `· ${state.idx + 1}/${A.length}`;
       show(a);
@@ -163,21 +149,25 @@
       if (state.lang !== "vi") { if (!await playFile(`audio/en_${id}.mp3`, tok)) return; }
       state.idx++;
       if (!await wait($("gap").value * 1000, tok)) return;
-      if (state.bell > 0 && Date.now() - state.lastBell >= state.bell * 60000 && !(state.dur && state.remaining <= 20)) {
-        music.bell(.75); if (!await wait(9000, tok)) return;   // let the bowl ring out before the next line
+      if (state.dur && state.elapsed >= state.dur * 60 && !state.goalNoted) {
+        state.goalNoted = true;
+        if (!$("keepGoing").checked) { finish(); return; }
+        if (state.bell !== 0) { music.bell(); if (!await wait(3000, tok)) return; }   // gentle "goal reached" chime, then keep going
+      } else if (state.bell > 0 && Date.now() - state.lastBell >= state.bell * 60000) {
+        music.bell(); if (!await wait(3000, tok)) return;
       }
-      if (state.dur && state.remaining <= 0) { stop(true); return; }
     }
   }
   function start() {
     initAudio(); ctx.resume();
     state.playing = true; $("playBtn").textContent = "❚❚";
-    state.freshStart = !state.started; state.started = true; state.lastBell = Date.now();
-    if (state.dur && state.remaining <= 0) state.remaining = state.dur * 60;
+    state.freshStart = !state.session;
+    if (!state.session) { state.session = { start: Date.now(), sec: 0 }; state.elapsed = 0; state.goalNoted = false; }
+    state.lastBell = Date.now(); $("stopBtn").hidden = false;
     musicGain.gain.cancelScheduledValues(ctx.currentTime);
     musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, 1.5);
     clearInterval(tick);
-    tick = setInterval(() => { if (state.dur) { state.remaining = Math.max(0, state.remaining - 1); showTime(); } }, 1000);
+    tick = setInterval(() => { if (!state.playing) return; state.elapsed++; state.session.sec++; saveCurrent(); showTime(); }, 1000);
     breathe(); runLoop();
     if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then(l => state.lock = l).catch(() => {});
   }
@@ -189,13 +179,54 @@
     if (state.lock) { state.lock.release().catch(() => {}); state.lock = null; }
     breathe();
     if (finished) {
-      if (state.bell !== 0) { music.bell(1); setTimeout(() => music.bell(.6), 4500); }
-      state.started = false;
+      if (state.bell !== 0) music.bell();
       $("lineVi").textContent = "Cảm ơn bạn. Mọi điều tốt đẹp đang đến.";
       $("lineEn").textContent = "Thank you. All good things are on their way.";
-      state.remaining = state.dur * 60; state.idx = 0; showTime(); $("counter").textContent = "";
+      state.idx = 0; state.elapsed = 0; state.goalNoted = false; showTime(); $("counter").textContent = "";
     }
   }
+  function finish() { commitSession(); stop(true); $("stopBtn").hidden = true; }
   $("playBtn").onclick = () => state.playing ? stop(false) : start();
+  $("stopBtn").onclick = () => { if (state.session) finish(); };
+
+  // ---------- meditation log (localStorage) ----------
+  const LOG = "thien.log.v1", CUR = "thien.current.v1", MIN_SEC = 15;
+  const readLog = () => { try { return JSON.parse(localStorage.getItem(LOG)) || []; } catch (e) { return []; } };
+  const writeLog = l => { try { localStorage.setItem(LOG, JSON.stringify(l)); } catch (e) {} };
+  function saveCurrent() { try { if (state.session) localStorage.setItem(CUR, JSON.stringify({ ...state.session, end: Date.now() })); } catch (e) {} }
+  function pushEntry(s) { if (!s || s.sec < MIN_SEC) return; const l = readLog(); l.push({ start: s.start, end: s.end || Date.now(), sec: s.sec }); writeLog(l); }
+  function commitSession() {
+    if (!state.session) return;
+    pushEntry({ ...state.session, end: Date.now() });
+    state.session = null; try { localStorage.removeItem(CUR); } catch (e) {}
+    renderLog();
+  }
+  // a session left unfinished (tab closed / crashed) is recovered on next visit
+  try { const c = JSON.parse(localStorage.getItem(CUR)); if (c) { pushEntry(c); localStorage.removeItem(CUR); } } catch (e) {}
+  window.addEventListener("pagehide", () => { if (state.session) { commitSession(); if (state.playing) stop(false); $("stopBtn").hidden = true; } });
+
+  const dayKey = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const dur = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h} giờ ${m} phút` : m ? `${m} phút${x ? " " + x + " giây" : ""}` : `${x} giây`; };
+  const WD = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+  function renderLog() {
+    const l = readLog().sort((a, b) => b.start - a.start), now = new Date();
+    const today = dayKey(now);
+    const wk = new Date(now); wk.setHours(0, 0, 0, 0); wk.setDate(wk.getDate() - ((wk.getDay() + 6) % 7)); // Monday
+    const sum = f => l.filter(f).reduce((a, e) => a + e.sec, 0);
+    const days = new Set(l.map(e => dayKey(e.start)));
+    let streak = 0; const d = new Date(now);
+    if (!days.has(dayKey(d))) d.setDate(d.getDate() - 1);
+    while (days.has(dayKey(d))) { streak++; d.setDate(d.getDate() - 1); }
+    $("statToday").textContent = dur(sum(e => dayKey(e.start) === today));
+    $("statWeek").textContent = dur(sum(e => e.start >= wk.getTime()));
+    $("statAll").textContent = dur(sum(() => true));
+    $("statStreak").textContent = `${streak} ngày`;
+    $("statCount").textContent = l.length;
+    $("logList").innerHTML = l.length ? l.slice(0, 200).map(e => { const s = new Date(e.start);
+      return `<li><span>${WD[s.getDay()]} ${pad(s.getDate())}/${pad(s.getMonth() + 1)}/${s.getFullYear()} · ${pad(s.getHours())}:${pad(s.getMinutes())}</span><b>${dur(e.sec)}</b></li>`; }).join("")
+      : `<li class="empty">Chưa có buổi thiền nào. <small>No sessions yet.</small></li>`;
+  }
+  $("clearLog").onclick = () => { if (confirm("Xoá toàn bộ nhật ký thiền? / Clear the whole log?")) { writeLog([]); renderLog(); } };
+  renderLog();
   document.addEventListener("keydown", e => { if (e.code === "Space" && e.target.tagName !== "INPUT") { e.preventDefault(); $("playBtn").click(); } });
 })();

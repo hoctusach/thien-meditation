@@ -27,10 +27,11 @@
       <p id="lineEn" class="en">Take a deep breath, and begin when you are ready.</p>
     </div>
     <div class="timer"><span id="timeLeft">10:00</span> <span id="counter" class="muted"></span></div>
-    <button id="playBtn" class="play" aria-label="Bắt đầu / Start">▶</button>
+    <div class="controls"><button id="playBtn" class="play" aria-label="Bắt đầu / Tạm dừng · Start / Pause">▶</button><button id="stopBtn" class="stop" hidden aria-label="Kết thúc buổi thiền / End session">■</button></div>
   </section>
 
-  <section class="panel">
+  <details class="panel">
+    <summary>⚙️ Cài đặt <small>Settings</small></summary>
     <div class="row">
       <label>Ngôn ngữ <small>Language</small></label>
       <div class="seg" id="langSeg">
@@ -58,34 +59,46 @@
       </div>
     </div>
     <div class="row">
-      <label>Chuông thiền <small>Singing bowl</small></label>
+      <label>Chuông <small>Bell</small></label>
       <div class="seg" id="bellSeg">
-        <button data-v="0">Tắt <small>Off</small></button>
-        <button data-v="2">2'</button>
-        <button data-v="3" class="on">3'</button>
+        <button data-v="0" class="on">Tắt <small>Off</small></button>
+        <button data-v="3">3'</button>
         <button data-v="5">5'</button>
         <button data-v="-1">Đầu/cuối <small>Start/end</small></button>
       </div>
     </div>
-    <div class="row slider"><label for="bellVol">🔔 Chuông <small>Bell</small></label><input id="bellVol" type="range" min="0" max="100" value="55"></div>
     <div class="row slider"><label for="musicVol">🎵 Nhạc <small>Music</small></label><input id="musicVol" type="range" min="0" max="100" value="45"></div>
     <div class="row slider"><label for="voiceVol">🗣️ Giọng <small>Voice</small></label><input id="voiceVol" type="range" min="0" max="100" value="90"></div>
-    <div class="row slider"><label for="gap">⏳ Khoảng lặng <small>Pause</small></label><input id="gap" type="range" min="3" max="20" value="7"><span id="gapVal" class="muted">7s</span></div>
+    <div class="row slider"><label for="gap">⏳ Khoảng lặng <small>Pause</small></label><input id="gap" type="range" min="2" max="15" value="5"><span id="gapVal" class="muted">5s</span></div>
     <div class="row toggles">
       <label class="tg"><input type="checkbox" id="loop" checked> Lặp lại <small>Loop</small></label>
       <label class="tg"><input type="checkbox" id="shuffle"> Xáo trộn <small>Shuffle</small></label>
       <label class="tg"><input type="checkbox" id="breath" checked> Nhịp thở <small>Breathing</small></label>
+      <label class="tg"><input type="checkbox" id="keepGoing" checked> Hết giờ vẫn chạy tiếp <small>Keep going after time</small></label>
     </div>
-  </section>
+  </details>
 
   <details class="list">
     <summary>📜 Danh sách câu khẳng định <small>All affirmations</small> (<span id="total">0</span>)</summary>
     <ol id="allLines"></ol>
   </details>
 
+  <details class="list log">
+    <summary>📖 Nhật ký thiền <small>Meditation log</small></summary>
+    <div class="stats">
+      <div><b id="statToday">0</b><span>Hôm nay <small>Today</small></span></div>
+      <div><b id="statWeek">0</b><span>Tuần này <small>This week</small></span></div>
+      <div><b id="statAll">0</b><span>Tổng cộng <small>All time</small></span></div>
+      <div><b id="statStreak">0</b><span>Chuỗi ngày <small>Streak</small></span></div>
+    </div>
+    <p class="muted">Số buổi <small>Sessions</small>: <span id="statCount">0</span> · chỉ tính thời gian đang phát, không tính lúc tạm dừng.</p>
+    <ul id="logList"></ul>
+    <button id="clearLog" class="clear">🗑️ Xoá nhật ký <small>Clear log</small></button>
+  </details>
+
   <footer>
-    Giọng đọc AI: tiếng Việt <b>VieNeu-TTS</b> (giọng nữ miền Nam “Mỹ Duyên”), English <b>Microsoft Edge neural (Ava)</b>.
-    Nhạc nền và tiếng chuông được tạo trực tiếp trong trình duyệt (Web Audio).<br>
+    Giọng đọc AI: tiếng Việt <b>VieNeu-TTS</b> (giọng miền Nam “Thục Đoan”), English <b>Microsoft Edge neural (Ava)</b>.
+    Nhạc nền được tạo trực tiếp trong trình duyệt (Web Audio).<br>
     Thở chậm, mỉm cười, và cảm nhận sự đủ đầy. 🪷
   </footer>
 </main>

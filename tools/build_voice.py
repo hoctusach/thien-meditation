@@ -1,22 +1,20 @@
-"""Tạo audio giọng đọc thiền (chậm, mềm) cho mọi câu trong affirmations.json.
-VI: VieNeu-TTS v3 Turbo, preset "Mỹ Duyên" (Nữ · miền Nam) -> kiểm tra Whisper, tạo lại nếu đọc chưa rõ.
-EN: edge-tts en-US-AvaNeural, rate -30%.
+"""Tạo audio giọng đọc thiền (cài đặt bản đầu tiên) cho mọi câu trong affirmations.json.
+VI: VieNeu-TTS v3 Turbo, preset "Thục Đoan" (Nữ · miền Nam) -> kiểm tra Whisper, tạo lại nếu đọc chưa rõ.
+EN: edge-tts en-US-AvaNeural, rate -15%.
 Usage: /workspace/vnv/bin/python tools/build_voice.py [vi|en|all]
 """
 import json, subprocess, sys, asyncio, difflib, os
 import numpy as np
-VI_VOICE, VI_TEMP, VI_TEMPO = "Mỹ Duyên", 0.6, 0.80
-EN_VOICE, EN_RATE, EN_PITCH, EN_TEMPO = "en-US-AvaNeural", "-30%", "-4Hz", 0.95
-SOFT = ("highpass=f=90,lowpass=f=6500,equalizer=f=3200:t=q:w=1.2:g=-3,deesser=i=0.5,"
-        "acompressor=threshold=-26dB:ratio=2.5:attack=25:release=300:makeup=2,"
-        "aecho=0.85:0.6:70|140:0.16|0.08,apad=pad_dur=0.6,loudnorm=I=-21:TP=-3:LRA=7")
+VI_VOICE, VI_TEMP, VI_TEMPO = "Thục Đoan", 0.8, 0.86
+EN_VOICE, EN_RATE, EN_PITCH, EN_TEMPO = "en-US-AvaNeural", "-15%", "-2Hz", 1
+SOFT = "apad=pad_dur=0.3,loudnorm=I=-18:TP=-2"   # v1 settings (giọng gốc, không xử lý thêm)
 A = json.load(open("affirmations.json"))
 TMP = "/tmp/medvoice"; os.makedirs(TMP, exist_ok=True)
 
 def post(src, dst, tempo):
-    st = f"rubberband=tempo={tempo}:formant=preserved:transients=smooth:window=long," if tempo != 1 else ""
+    st = f"atempo={tempo}," if tempo != 1 else ""
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-af", st + SOFT,
-                    "-ar", "44100", "-ac", "1", "-b:a", "72k", dst], check=True)
+                    "-ar", "44100", "-ac", "1", "-b:a", "64k", dst], check=True)
 
 def load16(f):
     return np.frombuffer(subprocess.run(["ffmpeg", "-loglevel", "error", "-i", f, "-f", "f32le", "-ac", "1", "-ar", "16000", "-"],
