@@ -4,7 +4,7 @@
 <script>/* self-heal: if a stale cached script is running (error or missing load marker), clear old caches once and reload */
 window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(app|pwa|music|affirmations|config)\.js/.test(e.filename)) window.__thienErr = 1; });</script>
 <meta charset="utf-8">
-<meta name="app-version" content="5736722444">
+<meta name="app-version" content="2800dca3de">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Thiền · Thay đổi tần số</title>
 <meta name="description" content="Thiền để thay đổi tần số — nhạc nhẹ và câu khẳng định song ngữ Việt – Anh. Meditate to shift your frequency.">
@@ -107,8 +107,8 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
     <div class="row">
       <label>⏳ Khoảng lặng <small>Pause</small></label>
       <div class="seg" id="gapSeg">
-        <button data-v="12" class="on">12s</button>
-        <button data-v="40">40s</button>
+        <button data-v="12">12s</button>
+        <button data-v="40" class="on">40s</button>
         <button data-v="60">60s</button>
         <button data-v="120">2'</button>
         <button data-v="300">5'</button>
@@ -215,9 +215,9 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
   </footer>
 </main>
 <script src="affirmations.js?v=f2f31fea"></script>
-<script src="music.js?v=39c88b6a"></script>
+<script src="music.js?v=0f08058e"></script>
 <script src="config.js?v=1a4d25de"></script>
-<script src="app.js?v=ec737d1a"></script>
+<script src="app.js?v=62a284cf"></script>
 <script src="pwa.js?v=895aae9e"></script>
 <script>
 addEventListener("load", () => setTimeout(async () => {

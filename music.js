@@ -31,6 +31,8 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
         if (d.el.currentTime > d.el.duration - FADE - 0.3) play(opts.auto && !opts.auto() ? cur : cur + 1);
       };
       d.el.onerror = () => { if (d === decks[active] && running) setTimeout(() => play(cur + 1), 1500); };
+      // paused by something other than us (single-media-element TVs, OS) while the session runs → let the app revive it
+      d.el.onpause = () => { if (d === decks[active] && running && !d.el.ended && opts.onUnexpectedPause) opts.onUnexpectedPause(); };
     }
     decks.forEach(watch);
     function play(i, { fade = FADE } = {}) {
@@ -57,6 +59,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
       },
       pause(sec = 1) { running = false; decks.forEach(d => { fadeTo(d, 0, sec); setTimeout(() => { if (!running) d.el.pause(); }, sec * 1000 + 300); }); },
       get running() { return running; },
+      ensure() { const d = decks[active]; if (running && d.el.paused && d.el.src) { if (d.el.ended) { play(opts.auto && !opts.auto() ? cur : cur + 1); return; } d.el.play().catch(e => console.warn("music", e)); } },
     };
   };
   window.MUSIC_TRACKS = TRACKS;

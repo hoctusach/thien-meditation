@@ -3,7 +3,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
-  const state = { breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
+  const state = { breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 40, auto: true, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
 
   // ---------- saved settings (per device, localStorage); bad/old values are ignored ----------
   const LS = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -112,13 +112,17 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
     master = ctx.createGain(); master.connect(ctx.destination);
     musicGain = ctx.createGain(); musicGain.gain.value = 0; musicGain.connect(master);
     voiceGain = ctx.createGain(); voiceGain.gain.value = $("voiceVol").value / 100; voiceGain.connect(master);
-    voiceEl = new Audio(); voiceEl.preload = "auto";
+    // Speech normally plays as decoded Web Audio buffers (see playFile), so the music is the ONLY media element.
+    // TVs (LG webOS) and some WebViews allow one playing <audio> at a time and paused the music for every quote.
+    // voiceEl is only the fallback if fetching/decoding a quote fails.
+    voiceEl = new Audio(); voiceEl.preload = "none";
     try { ctx.createMediaElementSource(voiceEl).connect(voiceGain); } catch (e) { /* fallback: element volume */ }
     duckGain = ctx.createGain(); duckGain.connect(musicGain);                 // music dips a little while a quote is spoken
-    const duck = on => duckGain.gain.setTargetAtTime(on ? 0.7 : 1, ctx.currentTime, on ? .25 : .8);
-    voiceEl.addEventListener("play", () => duck(true)); ["pause", "ended", "error"].forEach(ev => voiceEl.addEventListener(ev, () => duck(false)));
+    voiceEl.addEventListener("play", () => duck(true)); ["pause", "ended", "error"].forEach(ev => voiceEl.addEventListener(ev, () => { duck(false); ensureMusic(400); }));
+    ctx.onstatechange = () => { if (state.playing && ctx.state !== "running" && ctx.state !== "closed") ctx.resume().catch(() => {}); };
     music = createMusic(ctx, musicGain);
-    playlist = createPlaylist(ctx, duckGain, { auto: () => state.auto, onChange: () => { saveTrack(); showTrack(); } });
+    playlist = createPlaylist(ctx, duckGain, { auto: () => state.auto, onChange: () => { saveTrack(); showTrack(); mediaMeta(); },
+      onUnexpectedPause: () => ensureMusic(voiceElBusy() ? 0 : 1200) });
     playlist.select(state.track || 0);
   }
   $("musicVol").oninput = () => { if (musicGain && (state.playing || previewTimer)) musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, .3); };
@@ -128,6 +132,37 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   const mv = () => Math.pow($("musicVol").value / 100, 1.6) * 1.2;   // files are -24 LUFS; default 45 ≈ 15 dB under the voice
   { const v = LS.get("thien.musicVol"); if (v !== null && /^\d{1,3}$/.test(v) && +v <= 100) $("musicVol").value = v; }
   ["input", "change"].forEach(t => $("musicVol").addEventListener(t, () => LS.set("thien.musicVol", $("musicVol").value)));
+
+  const duck = on => { if (duckGain) duckGain.gain.setTargetAtTime(on ? 0.7 : 1, ctx.currentTime, on ? .25 : .8); };
+  const voiceElBusy = () => !!(voiceEl && !voiceEl.paused && !voiceEl.ended);
+  // Safety net: if the music got paused while a session runs and the user didn't pause it (single-media-element
+  // devices, OS interruptions), start it again — but never while the fallback speech element is still talking.
+  let ensureTimer, revived = [];
+  function ensureMusic(ms = 0) {
+    clearTimeout(ensureTimer);
+    ensureTimer = setTimeout(() => {
+      if (!state.playing || !playlist || !playlist.running || voiceElBusy()) return;
+      if (!playlist.element.paused) return;
+      const now = Date.now(); revived = revived.filter(t => now - t < 60000);
+      if (revived.length >= 6) return;                 // something keeps pausing it: don't fight forever
+      revived.push(now); ctx.resume().catch(() => {}); playlist.ensure();
+    }, ms);
+  }
+  // Media Session: lock-screen / remote / headset buttons control the whole session (so a pause there is a real pause)
+  function mediaMeta() {
+    if (!("mediaSession" in navigator) || !playlist) return;
+    const t = TR[playlist.current] || {};
+    try { navigator.mediaSession.metadata = new MediaMetadata({ title: t.en || "Thiền", artist: "Thiền · Meditation", album: t.vi || "" }); } catch (e) {}
+  }
+  if ("mediaSession" in navigator) {
+    const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch (e) {} };
+    h("play", () => { if (!state.playing) start(); });
+    h("pause", () => { if (state.playing) stop(false); });
+    h("stop", () => { if (state.session) finish(); });
+    h("nexttrack", () => $("nextTrack").click());
+    h("previoustrack", () => $("prevTrack").click());
+  }
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}   // iOS 17+: Web Audio speech ignores the silent switch like the music
 
   // Bell only — background music lives in music.js (playlist).
   function createMusic(ctx) {
@@ -212,7 +247,42 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
 
   // ---------- playback ----------
   const wait = (ms, tok) => new Promise(r => setTimeout(() => r(tok === state.token), ms));
-  function playFile(src, tok) {
+  // ---------- speech: fetch + decodeAudioData + AudioBufferSourceNode (no media element) ----------
+  const voiceBufs = new Map();
+  let curVoice = null, waFails = 0;
+  function loadVoice(src) {
+    if (!ctx || waFails >= 2) return Promise.reject(new Error("webaudio off"));
+    if (!voiceBufs.has(src)) {
+      const p = fetch(src).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+        .then(b => new Promise((ok, no) => { const q = ctx.decodeAudioData(b, ok, no); if (q && q.catch) q.catch(no); }));
+      p.catch(() => voiceBufs.delete(src));
+      voiceBufs.set(src, p);
+      while (voiceBufs.size > 4) voiceBufs.delete(voiceBufs.keys().next().value);
+    }
+    return voiceBufs.get(src);
+  }
+  const prefetch = src => { if (ctx) loadVoice(src).catch(() => {}); };
+  function stopVoice() {
+    if (voiceEl) voiceEl.pause();
+    if (curVoice) { const v = curVoice; curVoice = null; try { v.stop(); } catch (e) {} v.finish && v.finish(); }
+  }
+  async function playFile(src, tok) {
+    if (tok !== state.token) return false;
+    let buf = null;
+    try { buf = await Promise.race([loadVoice(src), new Promise((_, no) => setTimeout(() => no(new Error("timeout")), 10000))]); waFails = 0; }
+    catch (e) { if (!/webaudio off/.test(e.message)) { waFails++; console.warn("voice: Web Audio failed, using <audio>", e.message); } }
+    if (tok !== state.token) return false;
+    if (buf) return new Promise(res => {
+      const s = ctx.createBufferSource(); s.buffer = buf; s.connect(voiceGain);
+      let fin = false, guard;
+      const done = () => { if (fin) return; fin = true; clearTimeout(guard); s.onended = null; if (curVoice === s) curVoice = null; duck(false); ensureMusic(300); res(tok === state.token); };
+      const arm = () => { guard = setTimeout(() => ctx.state === "running" ? done() : arm(), buf.duration * 1000 + 3000); };   // in case onended never fires
+      s.onended = done; s.finish = done; curVoice = s;
+      ctx.resume().catch(() => {}); duck(true); s.start(); arm();
+    });
+    return playFileEl(src, tok);
+  }
+  function playFileEl(src, tok) {
     return new Promise(res => {
       if (tok !== state.token) return res(false);
       voiceEl.src = src; voiceEl.currentTime = 0;
@@ -254,7 +324,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   }
   async function runLoop() {
     const tok = ++state.token;
-    voiceEl.pause();
+    stopVoice();
     if (state.bell !== 0 && state.freshStart && !state.quietStart) { state.freshStart = false; music.bell(); if (!await wait(BELL_CLEAR_MS, tok)) return; }
     else await wait(1200, tok);
     while (state.playing && tok === state.token) {
@@ -265,12 +335,13 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
       }
       const it = ITEMS[state.curK = state.order[state.idx]];
       $("counter").textContent = `· ${state.idx + 1}/${state.order.length}`;
-      show(it);
+      prefetch(fileOf(it)); show(it);
       if (!await wait(700, tok)) return;
       if (!await playFile(fileOf(it), tok)) return;
       const p = state.order.indexOf(state.curK);
       if (p >= 0) state.idx = p + 1;                   // (if the language filter changed mid-quote, idx is already set)
       saveProgress();                                  // remembered on this device: the next session continues after it
+      { const nk = state.order[state.idx]; if (nk !== undefined) prefetch(fileOf(ITEMS[nk])); }
       const r = await pauseAfter(tok);
       if (!r) return;
       if (r === "done") { finish(); return; }
@@ -286,16 +357,17 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
     clearTimeout(previewTimer); previewTimer = null;
     musicGain.gain.cancelScheduledValues(ctx.currentTime);
     musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, 1.5);
+    mediaMeta(); revived = [];
     playlist.resume();                                // tracks play in full, then crossfade (auto: next one · repeat: same one)
     clearInterval(tick);
-    tick = setInterval(() => { if (!state.playing) return; state.elapsed++; state.session.sec++; saveCurrent(); showTime(); }, 1000);
+    tick = setInterval(() => { if (!state.playing) return; if (state.elapsed % 3 === 2) ensureMusic(0); state.elapsed++; state.session.sec++; saveCurrent(); showTime(); }, 1000);
     breathe(); runLoop(); state.quietStart = false;
     if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then(l => state.lock = l).catch(() => {});
   }
   function stop(finished) {
     state.playing = false; state.token++; clearInterval(tick);
     $("playBtn").textContent = "▶";
-    if (voiceEl) voiceEl.pause();
+    stopVoice(); clearTimeout(ensureTimer);
     if (musicGain) { clearTimeout(previewTimer); previewTimer = null; musicGain.gain.setTargetAtTime(0, ctx.currentTime, finished ? 2.5 : .6); playlist.pause(finished ? 8 : 2); }
     if (state.lock) { state.lock.release().catch(() => {}); state.lock = null; }
     breathe();
@@ -352,5 +424,11 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   }
   $("clearLog").onclick = () => { if (confirm("Xoá toàn bộ nhật ký thiền? / Clear the whole log?")) { writeLog([]); renderLog(); } };
   renderLog();
+  // TV remotes: Play/Pause keys (webOS 415 play, 19 pause, MediaPlayPause); OK/Enter on a focused button is a normal click
+  document.addEventListener("keydown", e => {
+    if (e.key === "MediaPlayPause" || e.keyCode === 10252) { e.preventDefault(); $("playBtn").click(); }
+    else if ((e.key === "MediaPlay" || e.keyCode === 415) && !state.playing) { e.preventDefault(); $("playBtn").click(); }
+    else if ((e.key === "MediaPause" || e.keyCode === 19) && state.playing) { e.preventDefault(); $("playBtn").click(); }
+  });
   document.addEventListener("keydown", e => { if (e.code === "Space" && !/^(INPUT|SELECT|TEXTAREA|BUTTON|SUMMARY|A)$/.test(e.target.tagName)) { e.preventDefault(); $("playBtn").click(); } });
 })();

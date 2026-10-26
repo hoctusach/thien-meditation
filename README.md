@@ -10,7 +10,7 @@ Trang web tĩnh (HTML/CSS/JS, không cần build).
 - `samples/` — mẫu 3 giọng nữ miền Nam.
 - Nhạc nền (`music.js`): **6 bản nhạc không lời thật** (public domain / CC0 / CC BY), phát lần lượt từng bài trọn vẹn rồi chuyển bài êm (crossfade 6s); chế độ “Lặp 1 bài”. Có ‹ › và menu chọn bài; khi chưa bắt đầu thiền, đổi bài sẽ phát thử 20s. Nhạc tự giảm nhẹ (~3 dB) khi giọng đọc. Xem mục “Nhạc nền” bên dưới.
 - Chuông: tiếng chuông nhỏ, ngắn (~3s), tổng hợp bằng Web Audio; mặc định **mỗi 5 phút** (chỉ reo trong khoảng lặng, không đè lên giọng đọc), có thể Tắt / 3' / chỉ đầu-cuối.
-- Mỗi câu Việt và mỗi câu Anh là một câu riêng (100 câu), sau mỗi câu là khoảng lặng 12s / 40s / 60s / 2' / 5' (mặc định 12s).
+- Mỗi câu Việt và mỗi câu Anh là một câu riêng (100 câu), sau mỗi câu là khoảng lặng 12s / 40s / 60s / 2' / 5' (mặc định 40s; thiết bị đã lưu lựa chọn thì giữ nguyên).
 - Hẹn giờ mặc định 10 phút; hết giờ vẫn tự chạy tiếp (đồng hồ hiện `10:00 +m:ss`) cho đến khi bấm ■ Kết thúc. Bỏ chọn “Hết giờ vẫn chạy tiếp” để dừng đúng giờ.
 - Nhật ký thiền: lưu trong localStorage của trình duyệt (khoá `thien.log.v1`), chỉ tính thời gian đang phát.
 
@@ -86,3 +86,11 @@ Finishing the whole list (loop off) clears it so the next session starts at the 
 load, every 15 min and whenever the app comes back to the foreground; if a newer version is live it updates the service worker
 and reloads — never during a session (it waits until the session is stopped). Navigations are network-first, so a normal open
 always gets the newest HTML when online.
+
+## Audio routing
+Only the background music uses media elements (two `<audio>` decks for the crossfade, through Web Audio gain nodes).
+Speech is fetched and decoded (`decodeAudioData`) and played as `AudioBufferSourceNode`s on the shared AudioContext, like the
+bell, so TV browsers (LG webOS) and WebViews that allow just one playing media element no longer pause the music for each quote.
+If fetching/decoding a quote fails, that quote falls back to an `<audio>` element. Safety net: if the music is paused while a
+session runs and it wasn't the user (Media Session pause / Play button), it is resumed once speech is over (max 6× a minute).
+Media Session play/pause/stop/next/previous control the whole session; TV remote Play/Pause keys work too.
