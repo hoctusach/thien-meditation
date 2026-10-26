@@ -1,8 +1,24 @@
+window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html checks all 5 scripts are this version or newer)
 (() => {
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
   const state = { breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 12, auto: true, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
+
+  // ---------- saved settings (per device, localStorage); bad/old values are ignored ----------
+  const LS = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+               set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+               del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+  ["loop", "shuffle", "breath", "keepGoing"].forEach(id => {          // Settings checkboxes
+    const el = $(id), v = LS.get("thien.cb." + id);
+    if (v === "1" || v === "0") el.checked = v === "1";
+    el.addEventListener("change", () => LS.set("thien.cb." + id, el.checked ? "1" : "0"));
+  });
+  document.querySelectorAll("details").forEach((d, i) => {           // which sections are open
+    const key = "thien.open." + (d.id || d.className.trim().replace(/\s+/g, ".") || i), v = LS.get(key);
+    if (v === "1" || v === "0") d.open = v === "1";
+    d.addEventListener("toggle", () => LS.set(key, d.open ? "1" : "0"));
+  });
 
   // ---------- items: every VI line and every EN line is its own quote ----------
   const ITEMS = [];
@@ -31,26 +47,62 @@
     state.order = ord;
     document.querySelectorAll("#allLines li").forEach((li, k) => li.classList.toggle("off", !allowed(ITEMS[k])));
   };
-  makeOrder();
 
-  // ---------- segmented controls ----------
-  const seg = (id, key, cb) => $(id).querySelectorAll("button").forEach(b => b.onclick = () => {
+  // ---------- progress: which quote this device reached (by quote text, so edits to the list don't break it) ----------
+  const PROG = "thien.progress.v1";
+  const keyOf = k => ITEMS[k].lang + "|" + ITEMS[k].text;
+  const kOfKey = new Map(ITEMS.map((it, k) => [it.lang + "|" + it.text, k]));
+  function saveProgress() {
+    if (state.curK == null || !ITEMS[state.curK]) return;
+    LS.set(PROG, JSON.stringify({ last: keyOf(state.curK), order: $("shuffle").checked ? state.order.map(keyOf) : null }));
+  }
+  function restoreProgress() {
+    let p = null; try { p = JSON.parse(LS.get(PROG)); } catch (e) {}
+    if (!p || typeof p.last !== "string") return;
+    if ($("shuffle").checked && Array.isArray(p.order)) {             // keep the same shuffled order as last time
+      const seen = new Set(), ord = [];
+      p.order.forEach(x => { const k = kOfKey.get(x); if (k !== undefined && allowed(ITEMS[k]) && !seen.has(k)) { seen.add(k); ord.push(k); } });
+      state.order.forEach(k => { if (!seen.has(k)) ord.push(k); });  // quotes added since then
+      state.order = ord;
+    }
+    const lastK = kOfKey.get(p.last);
+    let pos = 0;
+    if (lastK !== undefined && state.order.includes(lastK)) pos = state.order.indexOf(lastK) + 1;
+    else if (lastK !== undefined) { const i = state.order.findIndex(k => k > lastK); pos = i < 0 ? 0 : i; }   // other language now
+    state.idx = pos >= state.order.length ? 0 : pos;
+    if (lastK !== undefined) state.curK = lastK;
+    if (state.order.length) $("counter").textContent = `· ${state.idx + 1}/${state.order.length}`;
+  }
+
+  // ---------- segmented controls (each choice is remembered) ----------
+  const segSet = (id, key, b) => {
     $(id).querySelectorAll("button").forEach(x => x.classList.remove("on")); b.classList.add("on");
-    state[key] = key === "lang" ? b.dataset.v : key === "auto" ? b.dataset.v === "1" : Number(b.dataset.v); cb && cb();
-  });
+    state[key] = key === "lang" || key === "breathPat" ? b.dataset.v : key === "auto" ? b.dataset.v === "1" : Number(b.dataset.v);
+  };
+  const seg = (id, key, cb, storeKey) => {
+    const btns = [...$(id).querySelectorAll("button")];
+    btns.forEach(b => b.onclick = () => { segSet(id, key, b); if (storeKey) LS.set(storeKey, b.dataset.v); cb && cb(); });
+    const v = storeKey && LS.get(storeKey), b = v != null && btns.find(x => x.dataset.v === v);
+    if (b) segSet(id, key, b);                                         // restore (no side effects)
+  };
   seg("langSeg", "lang", () => {
     const curK = state.curK ?? -1;
     makeOrder();
     const pos = state.order.findIndex(k => k > curK);   // continue with the next allowed quote
-    state.idx = pos < 0 ? 0 : pos;
-  });
-  seg("durSeg", "dur", () => { state.goalNoted = state.dur > 0 && state.elapsed >= state.dur * 60; showTime(); try { localStorage.setItem("thien.dur.v2", state.dur); } catch (e) {} });
+    state.idx = pos < 0 ? 0 : pos; saveProgress();
+  }, "thien.lang");
   // duration: default is unlimited; new storage key so everyone starts on "Không giới hạn" once
-  try { const d = localStorage.getItem("thien.dur.v2"); if (d !== null && [0, 5, 10, 15, 20].includes(Number(d))) { state.dur = Number(d); document.querySelectorAll("#durSeg button").forEach(b => b.classList.toggle("on", Number(b.dataset.v) === state.dur)); } } catch (e) {}
-  seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } });
-    $("shuffle").onchange = () => { makeOrder(); state.idx = 0; };
-  seg("gapSeg", "gap");
-  seg("autoSeg", "auto", () => { try { localStorage.setItem("thien.auto", state.auto ? "1" : "0"); } catch (e) {} });
+  seg("durSeg", "dur", () => { state.goalNoted = state.dur > 0 && state.elapsed >= state.dur * 60; showTime(); }, "thien.dur.v2");
+  seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } }, "thien.bell");
+  $("shuffle").addEventListener("change", () => {
+    makeOrder();
+    const p = state.curK == null ? -1 : state.order.indexOf(state.curK);
+    state.idx = p < 0 ? 0 : p + 1; if (state.idx >= state.order.length) state.idx = 0; saveProgress();
+  });
+  seg("gapSeg", "gap", null, "thien.gap");
+  seg("autoSeg", "auto", null, "thien.auto");
+  makeOrder();          // with the remembered language
+  restoreProgress();    // continue where this device left off
 
   // ---------- audio graph ----------
   let ctx, master, musicGain, duckGain, voiceGain, music, voiceEl, playlist, previewTimer;
@@ -70,10 +122,12 @@
     playlist.select(state.track || 0);
   }
   $("musicVol").oninput = () => { if (musicGain && (state.playing || previewTimer)) musicGain.gain.setTargetAtTime(mv(), ctx.currentTime, .3); };
+  { const v = LS.get("thien.voiceVol"); if (v !== null && /^\d{1,3}$/.test(v) && +v <= 100) $("voiceVol").value = v; }
   $("voiceVol").oninput = () => { if (voiceGain) voiceGain.gain.value = $("voiceVol").value / 100; if (voiceEl) voiceEl.volume = 1; };
+  ["input", "change"].forEach(t => $("voiceVol").addEventListener(t, () => LS.set("thien.voiceVol", $("voiceVol").value)));
   const mv = () => Math.pow($("musicVol").value / 100, 1.6) * 1.2;   // files are -24 LUFS; default 45 ≈ 15 dB under the voice
-  try { const v = localStorage.getItem("thien.musicVol"); if (v !== null) $("musicVol").value = v; } catch (e) {}
-  $("musicVol").addEventListener("change", () => { try { localStorage.setItem("thien.musicVol", $("musicVol").value); } catch (e) {} });
+  { const v = LS.get("thien.musicVol"); if (v !== null && /^\d{1,3}$/.test(v) && +v <= 100) $("musicVol").value = v; }
+  ["input", "change"].forEach(t => $("musicVol").addEventListener(t, () => LS.set("thien.musicVol", $("musicVol").value)));
 
   // Bell only — background music lives in music.js (playlist).
   function createMusic(ctx) {
@@ -103,14 +157,13 @@
   }
   state.bellSound = "thien";   // single fixed bell (Chuông thiền, 3 strikes) — no picker
   $("bellPreview").onclick = () => { initAudio(); ctx.resume(); playBellSound(state.bellSound); };
-  try { const v = localStorage.getItem("thien.bellVol"); if (v !== null) $("bellVol").value = v; } catch (e) {}
+  { const v = LS.get("thien.bellVol"); if (v !== null && /^\d{1,3}$/.test(v) && +v <= 100) $("bellVol").value = v; }
   $("bellVol").oninput = () => { if (bellGain) bellGain.gain.value = bv(); try { localStorage.setItem("thien.bellVol", $("bellVol").value); } catch (e) {} };
 
   // ---------- now playing (music playlist UI) ----------
   const TR = window.MUSIC_TRACKS || [];
   TR.forEach((t, i) => { const o = document.createElement("option"); o.value = i; o.textContent = `${i + 1}. ${t.en}`; $("trackSel").appendChild(o); });
-  try { const k = Number(localStorage.getItem("thien.track")); state.track = k >= 0 && k < TR.length ? k : 0;
-        const a = localStorage.getItem("thien.auto"); if (a !== null) { state.auto = a === "1"; document.querySelectorAll("#autoSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === a)); } } catch (e) { state.track = 0; }
+  { const t = LS.get("thien.track"), k = Number(t); state.track = t !== null && Number.isInteger(k) && k >= 0 && k < TR.length ? k : 0; }
   function saveTrack() { state.track = playlist.current; try { localStorage.setItem("thien.track", state.track); } catch (e) {} }
   function showTrack() {
     const i = playlist && playlist.current >= 0 ? playlist.current : state.track || 0, t = TR[i] || {};
@@ -144,8 +197,7 @@
     step();
   }
   $("breath").onchange = breathe;
-  seg("breathSeg", "breathPat", () => { state.breathPat = String(state.breathPat); try { localStorage.setItem("thien.breath", state.breathPat); } catch (e) {} if (state.playing) breathe(); });
-  try { const bp = localStorage.getItem("thien.breath"); if (bp === "478" || bp === "426") { state.breathPat = bp; document.querySelectorAll("#breathSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === bp)); } } catch (e) {}
+  seg("breathSeg", "breathPat", () => { if (state.playing) breathe(); }, "thien.breath");
 
   // ---------- timer ----------
   let tick;
@@ -207,7 +259,10 @@
     else await wait(1200, tok);
     while (state.playing && tok === state.token) {
       if (!state.order.length) makeOrder();
-      if (state.idx >= state.order.length) { if (!$("loop").checked) { finish(); return; } makeOrder(); state.idx = 0; }
+      if (state.idx >= state.order.length) {
+        if (!$("loop").checked) { state.idx = 0; state.curK = undefined; LS.del(PROG); finish(); return; }   // whole list done: next time from the top
+        makeOrder(); state.idx = 0;
+      }
       const it = ITEMS[state.curK = state.order[state.idx]];
       $("counter").textContent = `· ${state.idx + 1}/${state.order.length}`;
       show(it);
@@ -215,6 +270,7 @@
       if (!await playFile(fileOf(it), tok)) return;
       const p = state.order.indexOf(state.curK);
       if (p >= 0) state.idx = p + 1;                   // (if the language filter changed mid-quote, idx is already set)
+      saveProgress();                                  // remembered on this device: the next session continues after it
       const r = await pauseAfter(tok);
       if (!r) return;
       if (r === "done") { finish(); return; }
@@ -243,17 +299,18 @@
     if (musicGain) { clearTimeout(previewTimer); previewTimer = null; musicGain.gain.setTargetAtTime(0, ctx.currentTime, finished ? 2.5 : .6); playlist.pause(finished ? 8 : 2); }
     if (state.lock) { state.lock.release().catch(() => {}); state.lock = null; }
     breathe();
+    try { window.dispatchEvent(new Event("thien:stopped")); } catch (e) {}
     if (finished) {
       if (state.bell !== 0) music.bell();
       $("lineVi").className = "vi"; $("lineTag").textContent = "";
       $("lineVi").textContent = "Cảm ơn bạn. Mọi điều tốt đẹp đang đến.";
       $("lineEn").textContent = "Thank you. All good things are on their way.";
-      state.idx = 0; state.curK = undefined; state.elapsed = 0; state.goalNoted = false; showTime(); $("counter").textContent = "";
+      state.elapsed = 0; state.goalNoted = false; showTime();   // the quote position is kept: next session continues
     }
   }
   function finish() { commitSession(); stop(true); $("stopBtn").hidden = true; }
   $("playBtn").onclick = () => state.playing ? stop(false) : start();
-  window.THIEN = { start: o => { if (!state.playing) start(o); }, isPlaying: () => state.playing, get playlist() { return playlist; } };
+  window.THIEN = { start: o => { if (!state.playing) start(o); }, isPlaying: () => state.playing, inSession: () => !!state.session, get playlist() { return playlist; } };
   $("stopBtn").onclick = () => { if (state.session) finish(); };
 
   // ---------- meditation log (localStorage) ----------

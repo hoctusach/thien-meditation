@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<script>/* self-heal: if a stale cached script fails to start the app, clear old caches once and reload */
+<script>/* self-heal: if a stale cached script is running (error or missing load marker), clear old caches once and reload */
 window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(app|pwa|music|affirmations|config)\.js/.test(e.filename)) window.__thienErr = 1; });</script>
 <meta charset="utf-8">
+<meta name="app-version" content="5736722444">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Thiền · Thay đổi tần số</title>
 <meta name="description" content="Thiền để thay đổi tần số — nhạc nhẹ và câu khẳng định song ngữ Việt – Anh. Meditate to shift your frequency.">
@@ -213,14 +214,15 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
     <p class="closing">Thở chậm, mỉm cười, và cảm nhận sự đủ đầy. 🪷</p>
   </footer>
 </main>
-<script src="affirmations.js?v=c5a57084"></script>
-<script src="music.js?v=60147eae"></script>
-<script src="config.js?v=ce70eb06"></script>
-<script src="app.js?v=bde3e4e7"></script>
-<script src="pwa.js?v=f7c97547"></script>
+<script src="affirmations.js?v=f2f31fea"></script>
+<script src="music.js?v=39c88b6a"></script>
+<script src="config.js?v=1a4d25de"></script>
+<script src="app.js?v=ec737d1a"></script>
+<script src="pwa.js?v=895aae9e"></script>
 <script>
 addEventListener("load", () => setTimeout(async () => {
-  if (window.THIEN && !window.__thienErr) return;
+  // healthy = no script error, app started, and all 5 scripts are current (old cached copies have no load marker)
+  if (window.THIEN && !window.__thienErr && (window.__thienJS || 0) >= 5) return;
   try { if (sessionStorage.getItem("thien.heal")) return; sessionStorage.setItem("thien.heal", "1"); } catch (e) { return; }
   try {
     // drop the old worker + its caches; the next load comes straight from the network and registers a fresh worker

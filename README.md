@@ -71,3 +71,18 @@ Thời gian mặc định: **Không giới hạn** (đồng hồ đếm lên t�
 - Service worker tải trước toàn bộ file **thẳng từ mạng** (`cache: "reload"`), trang và script luôn cùng một phiên bản; khi có bản mới, trang tự tải lại 1 lần (không khi đang thiền).
 - Nếu một bản cũ trong bộ nhớ đệm làm app không chạy, trang tự xoá bộ nhớ đệm cũ và tải lại 1 lần (tự chữa lỗi).
 - Chuông 3 hồi (~34s): khi chuông reo, câu đọc tiếp theo chờ đến sau hồi thứ 3 (~23s), không đọc đè lên chuông.
+
+## Remembered per device (localStorage)
+Every setting is saved and restored (bad/old values are ignored): language `thien.lang`, duration `thien.dur.v2`, pause `thien.gap`,
+bell interval `thien.bell`, breathing pattern `thien.breath`, music order `thien.auto`, track `thien.track`, volumes
+`thien.bellVol` / `thien.musicVol` / `thien.voiceVol`, checkboxes `thien.cb.loop|shuffle|breath|keepGoing`, theme `thien.theme`,
+reminder `thien.reminder`, open/closed sections `thien.open.*`.
+Progress `thien.progress.v1` = `{ last: "vi|<quote text>", order: [...] }` (order only when shuffled). The next session starts
+with the quote after `last`, found by text, so adding/removing/reordering quotes or switching language doesn't break it.
+Finishing the whole list (loop off) clears it so the next session starts at the top.
+
+## Updates
+`tools/build_sw.py` writes `version.json` and `<meta name="app-version">`. pwa.js fetches `version.json?t=…` (no-store) 2.5 s after
+load, every 15 min and whenever the app comes back to the foreground; if a newer version is live it updates the service worker
+and reloads — never during a session (it waits until the session is stopped). Navigations are network-first, so a normal open
+always gets the newest HTML when online.

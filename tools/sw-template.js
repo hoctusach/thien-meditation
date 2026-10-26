@@ -31,12 +31,20 @@ const saving = new Set();
 self.addEventListener("fetch", e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== location.origin) return;
+  if (url.pathname.endsWith("/version.json")) return;   // always straight from the network (update check)
   if (req.mode === "navigate") {
-    // The page always comes from this version's own cache, so HTML and JS are always the same version
-    // (a fresh page with old cached JS broke the Play button). Updates arrive via a new sw.js, then the page reloads once.
+    // Network first (revalidated, so GitHub's 10-minute HTML cache can't hide an update); cached page when offline/slow.
+    // Scripts are referenced as app.js?v=<hash>, and only an exact match is served from cache, so the page and its
+    // scripts are always the same version.
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
-      return (await c.match("./")) || (await c.match("./index.html")) || fetch(req);
+      const net = fetch(req, { cache: "no-cache" }).then(r => { if (r.ok && r.status === 200 && !r.redirected) c.put("./", r.clone()); return r; });
+      const slow = new Promise(res => setTimeout(res, 6000));
+      try {
+        const r = await Promise.race([net, slow.then(() => null)]);
+        if (r) return r;
+        return (await c.match("./")) || await net;
+      } catch (x) { return (await c.match("./")) || (await c.match("./index.html")) || Response.error(); }
     })());
     return;
   }
@@ -51,7 +59,9 @@ self.addEventListener("fetch", e => {
     return;
   }
   e.respondWith((async () => {
-    const cached = await (await caches.open(CACHE)).match(req.url.split("#")[0], { ignoreSearch: true });
+    const c = await caches.open(CACHE), u = req.url.split("#")[0];
+    // versioned files (…?v=hash) must match exactly; other files ignore the query string
+    const cached = (await c.match(u)) || (url.searchParams.has("v") ? null : await c.match(u, { ignoreSearch: true }));
     if (cached) return req.headers.has("range") ? rangeResponse(req, cached) : cached;
     const r = await fetch(req);
     if (r.ok && r.status === 200) { const c = r.clone(); caches.open(CACHE).then(x => x.put(req.url, c)); }

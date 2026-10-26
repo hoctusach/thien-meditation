@@ -1,3 +1,4 @@
+window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html checks all 5 scripts are this version or newer)
 // Nhạc nền: các bản nhạc không lời thật (public domain / CC0 / CC BY) — xem audio/music/tracks.json & README.
 // Two <audio> players (A/B) through Web Audio so tracks crossfade smoothly; files stream (no full decode).
 (() => {

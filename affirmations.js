@@ -251,3 +251,4 @@ window.AFFIRMATIONS = [
   "group": "Kiến tạo"
  }
 ];
+window.__thienJS = (window.__thienJS || 0) + 1;

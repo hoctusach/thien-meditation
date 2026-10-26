@@ -7,6 +7,6 @@ PY=${PY:-/workspace/vnv/bin/python}
 python3 - <<'P'
 import json
 d=json.load(open('affirmations.json'))
-open('affirmations.js','w').write("// Danh sách câu khẳng định — sửa ở affirmations.json rồi chạy lại tools/build_audio.sh\nwindow.AFFIRMATIONS = "+json.dumps(d,ensure_ascii=False,indent=1)+";\n")
+open('affirmations.js','w').write("// Danh sách câu khẳng định — sửa ở affirmations.json rồi chạy lại tools/build_audio.sh\nwindow.AFFIRMATIONS = "+json.dumps(d,ensure_ascii=False,indent=1)+";\nwindow.__thienJS = (window.__thienJS || 0) + 1;\n")
 P
 $PY tools/build_voice.py all

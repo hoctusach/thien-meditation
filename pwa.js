@@ -1,3 +1,4 @@
+window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html checks all 5 scripts are this version or newer)
 // Themes, installable app (PWA), and the daily reminder.
 (() => {
   const $ = id => document.getElementById(id);
@@ -48,6 +49,33 @@
   const swReady = ("serviceWorker" in navigator)
     ? navigator.serviceWorker.register("sw.js").then(r => (swReg = r, navigator.serviceWorker.ready)).catch(e => { console.warn("SW", e); return null; })
     : Promise.resolve(null);
+  // ---------- update check: is a newer version live than the one running? ----------
+  // version.json is fetched with a unique URL and no-store (never from any cache). If it differs from this page's
+  // <meta name="app-version">, ask the service worker to update and reload — but never in the middle of a session.
+  const RUNNING = (document.querySelector('meta[name="app-version"]') || {}).content || "";
+  let liveVersion = "";
+  const tryReload = () => {
+    if (!liveVersion || liveVersion === RUNNING || (window.THIEN && (THIEN.isPlaying() || THIEN.inSession()))) return;
+    let n = 0; try { const t = JSON.parse(sessionStorage.getItem("thien.updTry") || "{}"); n = t.v === liveVersion ? t.n : 0;
+      if (n >= 2) return; sessionStorage.setItem("thien.updTry", JSON.stringify({ v: liveVersion, n: n + 1 })); } catch (e) { return; }
+    location.reload();
+  };
+  async function checkVersion() {
+    if (!RUNNING || !navigator.onLine) return;
+    try {
+      const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+      const j = r.ok ? await r.json() : null;
+      if (!j || !j.version || j.version === RUNNING) return;
+      liveVersion = j.version;
+      if (swReg) await swReg.update().catch(() => {});
+      setTimeout(tryReload, 1500);
+    } catch (e) {}
+  }
+  setTimeout(checkVersion, 2500);
+  setInterval(checkVersion, 15 * 60e3);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { checkVersion(); swReg && swReg.update().catch(() => {}); } });
+  window.addEventListener("thien:stopped", () => setTimeout(tryReload, 3000));   // an update found mid-session applies after it
+
   // A new version took over: reload once so page, scripts and styles all come from the same version
   // (not in the middle of a session — then the new version is used next time the app opens).
   if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
