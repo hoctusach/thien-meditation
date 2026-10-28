@@ -253,7 +253,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   function loadVoice(src) {
     if (!ctx || waFails >= 2) return Promise.reject(new Error("webaudio off"));
     if (!voiceBufs.has(src)) {
-      const p = fetch(src).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+      const p = fetch(src, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
         .then(b => new Promise((ok, no) => { const q = ctx.decodeAudioData(b, ok, no); if (q && q.catch) q.catch(no); }));
       p.catch(() => voiceBufs.delete(src));
       voiceBufs.set(src, p);

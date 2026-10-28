@@ -12,7 +12,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Tôi đã có tất cả.",
-  "en": "I already have everything.",
+  "en": "I already have it all.",
   "group": "Của bạn"
  },
  {
@@ -22,7 +22,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Tôi công nhận rằng mọi điều tôi mong muốn đã tồn tại.",
-  "en": "I acknowledge that everything I desire already exists.",
+  "en": "I recognize that everything I desire already exists.",
   "group": "Của bạn"
  },
  {
@@ -42,7 +42,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Chỉ quan sát. Cảm giác trồi lên, rồi lặng xuống.",
-  "en": "Just observe. Sensations rise, then fall away.",
+  "en": "Just observe. Sensations arise, and pass away.",
   "group": "Quan sát"
  },
  {
@@ -62,7 +62,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Như sóng trên mặt biển, đến rồi đi, mặt biển vẫn bình yên.",
-  "en": "Like waves on the sea, they come and go; the sea stays at peace.",
+  "en": "Waves rise and fall; the ocean itself stays calm.",
   "group": "Quan sát"
  },
  {
@@ -87,7 +87,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Không giữ lại, không đẩy đi, chỉ nhìn thấy.",
-  "en": "Not holding on, not pushing away, only seeing.",
+  "en": "Not holding on, not pushing away. Simply seeing.",
   "group": "Quan sát"
  },
  {
@@ -107,12 +107,12 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Hơi thở vào, hơi thở ra, có mặt trọn vẹn ở đây.",
-  "en": "Breath in, breath out, fully present here.",
+  "en": "Breathing in, breathing out, fully present here.",
   "group": "Quan sát"
  },
  {
   "vi": "Tôi cảm ơn cơ thể mình đã luôn yêu thương và nâng đỡ tôi.",
-  "en": "I thank my body for always loving and supporting me.",
+  "en": "I thank my body for always caring for me and carrying me.",
   "group": "Biết ơn"
  },
  {
@@ -127,7 +127,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Cảm giác này cũng vô thường, rồi cũng sẽ qua.",
-  "en": "This sensation too is impermanent; it too will pass.",
+  "en": "This sensation is impermanent. This too shall pass.",
   "group": "Quan sát"
  },
  {
@@ -147,7 +147,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Không có ai cần làm gì, chỉ có sự nhận biết.",
-  "en": "No one needs to do anything; there is only awareness.",
+  "en": "Nothing to do, no one doing it. Just awareness.",
   "group": "Quan sát"
  },
  {
@@ -167,7 +167,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Càng buông cái tôi, lòng càng nhẹ nhàng, thanh thản.",
-  "en": "The more the self is released, the lighter and calmer the heart.",
+  "en": "As the sense of self loosens, the heart grows lighter and calmer.",
   "group": "Quan sát"
  },
  {
@@ -187,7 +187,7 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Suy nghĩ như mây trôi qua bầu trời, bầu trời vẫn rộng mở.",
-  "en": "Thoughts drift like clouds across the sky; the sky stays wide open.",
+  "en": "Thoughts pass like clouds across the sky; the sky remains vast and open.",
   "group": "Quan sát"
  },
  {
@@ -212,12 +212,12 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Bình thản trước dễ chịu, bình thản trước khó chịu.",
-  "en": "Equanimity with the pleasant, equanimity with the unpleasant.",
+  "en": "Equanimous with the pleasant, equanimous with the unpleasant.",
   "group": "Quan sát"
  },
  {
   "vi": "Những ước mơ của tôi đang trở thành hiện thực.",
-  "en": "My dreams are becoming reality.",
+  "en": "My dreams are coming true.",
   "group": "Kiến tạo"
  },
  {
@@ -232,22 +232,22 @@ window.AFFIRMATIONS = [
  },
  {
   "vi": "Lặng yên, sáng suốt, như người đứng bên bờ nhìn sóng.",
-  "en": "Still and clear, like one standing on the shore watching the waves.",
+  "en": "Still and clear, like watching the waves from the shore.",
   "group": "Quan sát"
  },
  {
   "vi": "Điều tôi tìm kiếm cũng đang tìm kiếm tôi.",
-  "en": "What I seek is also seeking me.",
+  "en": "What I seek is seeking me.",
   "group": "Kiến tạo"
  },
  {
   "vi": "Tôi sống mỗi ngày như thể điều mình mong ước đã thành hiện thực.",
-  "en": "I live each day as if my wish has already come true.",
+  "en": "I live each day as if my dreams have already come true.",
   "group": "Kiến tạo"
  },
  {
   "vi": "Tôi là ánh sáng, tôi là tình yêu, tôi là sự đủ đầy.",
-  "en": "I am light, I am love, I am wholeness.",
+  "en": "I am light, I am love, I am whole.",
   "group": "Kiến tạo"
  }
 ];
