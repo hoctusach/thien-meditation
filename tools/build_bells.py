@@ -1,5 +1,7 @@
 """Synthesise the bell sounds (additive modal synthesis, numpy) -> audio/bells/*.mp3
-Each bell: <id>.mp3 (one strike) and <id>-x5.mp3 (5 slow strikes for the daily reminder).
+Shipped: audio/bells/thien.mp3 = "Chuông thiền" 3 strikes (0 / 10 / 20 s, ~34 s) and audio/bell5.mp3 = the same file
+(daily reminder); audio/bells/bells.json. Re-running reproduces them byte for byte (same ffmpeg build).
+SAMPLES=1 also writes listening samples of all bells (1 and 3 strikes) to samples/bells/ (not shipped).
 
 "thien" (Chuông thiền) is RE-SYNTHESISED from measurements of a reference meditation bell
 (mode frequencies, levels and per-mode decay were measured; no audio from the reference is used
@@ -74,19 +76,22 @@ def repeat(one, n, gap):
         s = int(k * gap * SR); out[s:s + len(one)] += one
     return out / np.abs(out).max()
 
+SHIPPED = ["thien"]          # bells the app uses
+STRIKES, STRIKE_GAP = 3, 10.0  # app bell: 3 strikes, 10 s apart (app.js waits BELL_CLEAR_MS = 23 s after it)
+
 if __name__ == "__main__":
     import glob, shutil
+    os.makedirs("audio/bells", exist_ok=True)
     for f in glob.glob("audio/bells/*.mp3"): os.remove(f)
     meta = []
-    for bid, (vi, en, gen, lp, L, gap) in BELLS.items():
-        one = gen()
-        encode(one, f"audio/bells/{bid}.mp3", lp, L - 2.5)
-        five = repeat(one, 5, gap)
-        encode(five, f"audio/bells/{bid}-x5.mp3", lp, len(five) / SR - 2.5)
+    for bid in SHIPPED:
+        vi, en, gen, lp, L, gap = BELLS[bid]
+        three = repeat(gen(), STRIKES, STRIKE_GAP)
+        encode(three, f"audio/bells/{bid}.mp3", lp, len(three) / SR - 2.5)
         meta.append({"id": bid, "vi": vi, "en": en})
-        print(bid, L, "s; x5", round(len(five) / SR, 1), "s")
-    shutil.copy(f"audio/bells/{DEFAULT}-x5.mp3", "audio/bell5.mp3")
-    json.dump(meta, open("audio/bells/bells.json", "w"), ensure_ascii=False)
+        print(bid, STRIKES, "strikes,", round(len(three) / SR, 1), "s")
+    shutil.copy(f"audio/bells/{DEFAULT}.mp3", "audio/bell5.mp3")
+    open("audio/bells/bells.json", "w").write(json.dumps(meta, ensure_ascii=False) + "\n")
     if os.environ.get("SAMPLES"):          # listening samples (not precached / not part of the app)
         os.makedirs("samples/bells", exist_ok=True)
         for f in glob.glob("samples/bells/*.mp3"): os.remove(f)

@@ -5,11 +5,12 @@ Thiền để thay đổi tần số · Meditate to shift your frequency.
 Trang web tĩnh (HTML/CSS/JS, không cần build).
 
 - `affirmations.json` / `affirmations.js` — 50 câu (VI + EN; 10 câu “Quan sát” xen đều trong danh sách). Sửa JSON rồi chạy `tools/build_audio.sh`.
-- `audio/vi_XX.mp3` — VieNeu-TTS v3 Turbo, preset “Thục Đoan” (Nữ · miền Nam), tempo 0.86.
-- `audio/en_XX.mp3` — Microsoft Edge neural TTS en-US-AvaNeural, rate −15%.
+- `audio/vi_XX.mp3` — giọng “Thục Đoan” (Nữ · miền Nam) của [VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS) v3 Turbo by pnnbao97 — Apache-2.0 ([model card](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo): preset voices & generated audio may be used commercially), temperature 0.8, tempo 0.86.
+- `audio/en_XX.mp3` — giọng “Heart” (`af_heart`) của [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) v1.0 by hexgrad — Apache-2.0, chạy local qua kokoro-onnx, speed 0.75; −18.5 LUFS, 44.1 kHz mono 64k.
+- Tạo lại giọng: `tools/build_voice.py` (phiên bản thư viện ghim trong `tools/requirements-voice.txt`; không còn dùng edge-tts).
 - `samples/` — mẫu 3 giọng nữ miền Nam.
 - Nhạc nền (`music.js`): **6 bản nhạc không lời thật** (public domain / CC0 / CC BY), phát lần lượt từng bài trọn vẹn rồi chuyển bài êm (crossfade 6s); chế độ “Lặp 1 bài”. Có ‹ › và menu chọn bài; khi chưa bắt đầu thiền, đổi bài sẽ phát thử 20s. Nhạc tự giảm nhẹ (~3 dB) khi giọng đọc. Xem mục “Nhạc nền” bên dưới.
-- Chuông: tiếng chuông nhỏ, ngắn (~3s), tổng hợp bằng Web Audio; mặc định **mỗi 5 phút** (chỉ reo trong khoảng lặng, không đè lên giọng đọc), có thể Tắt / 3' / chỉ đầu-cuối.
+- Chuông: “Chuông thiền” 3 hồi (~34 s), tổng hợp bằng `tools/build_bells.py` (chạy lại sẽ tạo đúng y hệt file đang dùng); mặc định **mỗi 5 phút** (chỉ reo trong khoảng lặng, không đè lên giọng đọc), có thể Tắt / 3' / chỉ đầu-cuối.
 - Mỗi câu Việt và mỗi câu Anh là một câu riêng (100 câu), sau mỗi câu là khoảng lặng 12s / 40s / 60s / 2' / 5' (mặc định 40s; thiết bị đã lưu lựa chọn thì giữ nguyên).
 - Hẹn giờ mặc định 10 phút; hết giờ vẫn tự chạy tiếp (đồng hồ hiện `10:00 +m:ss`) cho đến khi bấm ■ Kết thúc. Bỏ chọn “Hết giờ vẫn chạy tiếp” để dừng đúng giờ.
 - Nhật ký thiền: lưu trong localStorage của trình duyệt (khoá `thien.log.v1`), chỉ tính thời gian đang phát.
@@ -61,7 +62,7 @@ Ghi công (cũng hiện ở cuối trang): *“Meditation Impromptu 02” Kevin 
 | thien-tram | Chuông thiền trầm (cùng chuông, thấp hơn 3 nửa cung, ngân lâu hơn) | ~16s |
 | bright | Chuông sáng (ngắn) — tiếng cũ | ~4s |
 
-Mỗi chuông có `audio/bells/<id>.mp3` (1 hồi) và `<id>-x5.mp3` (5 hồi chậm, cách 8–9s) dùng cho nhắc nhở hằng ngày. `audio/bell5.mp3` = bản 5 hồi của chuông mặc định (~46s). Ai đã chọn chuông cũ (đã bỏ) sẽ tự chuyển về “Chuông thiền”. Mẫu nghe thử: `samples/bells/` (tạo bằng `SAMPLES=1 python3 tools/build_bells.py`).
+App dùng một chuông: `audio/bells/thien.mp3` (3 hồi, cách 10s, ~34s); `audio/bell5.mp3` (nhắc nhở hằng ngày) là cùng file đó. `python3 tools/build_bells.py` tạo lại đúng từng byte. Ai đã chọn chuông cũ (đã bỏ) sẽ tự chuyển về “Chuông thiền”. Mẫu nghe thử: `samples/bells/` (tạo bằng `SAMPLES=1 python3 tools/build_bells.py`).
 Thời gian mặc định: **Không giới hạn** (đồng hồ đếm lên từ 00:00).
 
 > **Cập nhật 26/10/2026:** app chỉ còn 1 chuông cố định là "Chuông thiền" 3 hồi (`audio/bells/thien.mp3` = `audio/bell5.mp3`, bản `samples/bells/1-chuong-thien-3-hoi.mp3` đã duyệt), không còn phần chọn chuông. Các chuông khác và bản x5 đã bỏ.

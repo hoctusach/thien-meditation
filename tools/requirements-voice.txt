@@ -1,0 +1,9 @@
+# venv for tools/build_voice.py (python 3.13). Kokoro-82M v1.0 model files: see KOKORO_FILES in build_voice.py
+vieneu==3.8.3
+onnxruntime==1.22.1
+kokoro-onnx==0.6.1
+espeakng-loader==0.2.4
+phonemizer==3.4.0
+soundfile==0.14.0
+faster-whisper==1.2.1
+numpy==2.5.4

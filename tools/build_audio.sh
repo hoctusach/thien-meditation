@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Tạo lại affirmations.js + toàn bộ audio từ affirmations.json (chạy từ bất kỳ đâu).
-# Cần: venv có vieneu (onnxruntime<1.23), edge-tts, faster-whisper; ffmpeg có rubberband.
+# Cần: venv theo tools/requirements-voice.txt (vieneu, kokoro-onnx, faster-whisper); ffmpeg.
 set -e
 cd "$(dirname "$0")/.."
 PY=${PY:-/workspace/vnv/bin/python}
