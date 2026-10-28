@@ -4,7 +4,7 @@
 <script>/* self-heal: if a stale cached script is running (error or missing load marker), clear old caches once and reload */
 window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(app|pwa|music|affirmations|config)\.js/.test(e.filename)) window.__thienErr = 1; });</script>
 <meta charset="utf-8">
-<meta name="app-version" content="30089d1e5f">
+<meta name="app-version" content="354d69983b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Thiền · Thay đổi tần số</title>
 <meta name="description" content="Thiền để thay đổi tần số — nhạc nhẹ và câu khẳng định song ngữ Việt – Anh. Meditate to shift your frequency.">
@@ -21,7 +21,7 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Thiền">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="style.css?v=5168f57e">
+<link rel="stylesheet" href="style.css?v=90445731">
 </head>
 <body>
 <div class="bg" id="bgA"></div><div class="bg" id="bgB"></div>
@@ -60,6 +60,13 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
   <details class="panel">
     <summary>⚙️ Cài đặt <small>Settings</small></summary>
     <div class="row">
+      <label>Chế độ <small>Mode</small></label>
+      <div class="seg" id="modeSeg">
+        <button data-v="thien" class="on">Thiền · có chuông <small>Meditation · bell</small></button>
+        <button data-v="classic">Cổ điển · không chuông <small>Relax · Classical</small></button>
+      </div>
+    </div>
+    <div class="row">
       <label>Ngôn ngữ <small>Language</small></label>
       <div class="seg" id="langSeg">
         <button data-v="both" class="on">Việt + English</button>
@@ -88,7 +95,8 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
         <button data-v="0">Lặp 1 bài <small>Repeat one</small></button>
       </div>
     </div>
-    <div class="row">
+    <div class="row" id="modeNote" hidden><small>🎻 Thư giãn · Nhạc cổ điển: không có chuông · Relax · Classical: no bell</small></div>
+    <div class="row bellRow">
       <label>Chuông <small>Bell</small></label>
       <div class="seg" id="bellSeg">
         <button data-v="0">Tắt <small>Off</small></button>
@@ -97,11 +105,11 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
         <button data-v="-1">Đầu/cuối <small>Start/end</small></button>
       </div>
     </div>
-    <div class="row">
+    <div class="row bellRow">
       <label>Chuông thiền <small>Meditation bell</small></label>
       <button id="bellPreview" class="pill" aria-label="Nghe thử / Preview">▶ Nghe thử</button>
     </div>
-    <div class="row slider"><label for="bellVol">🔔 Chuông <small>Bell</small></label><input id="bellVol" type="range" min="0" max="100" value="45"></div>
+    <div class="row slider bellRow"><label for="bellVol">🔔 Chuông <small>Bell</small></label><input id="bellVol" type="range" min="0" max="100" value="45"></div>
     <div class="row slider"><label for="musicVol">🎵 Nhạc <small>Music</small></label><input id="musicVol" type="range" min="0" max="100" value="45"></div>
     <div class="row slider"><label for="voiceVol">🗣️ Giọng <small>Voice</small></label><input id="voiceVol" type="range" min="0" max="100" value="90"></div>
     <div class="row">
@@ -209,15 +217,16 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
       <summary>📚 Nguồn tham khảo <small>Credits</small></summary>
       <p>🗣️ Giọng đọc AI <small>Voices</small>: tiếng Việt “Thục Đoan” — <a href="https://github.com/pnnbao97/VieNeu-TTS" target="_blank" rel="noopener">VieNeu-TTS</a> by pnnbao97 (<a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache-2.0</a>) · English “Heart” — <a href="https://huggingface.co/hexgrad/Kokoro-82M" target="_blank" rel="noopener">Kokoro-82M</a> by hexgrad (<a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache-2.0</a>).</p>
       <p>🔔 Tiếng chuông: “Chuông thiền” (3 hồi) — tự tổng hợp bằng máy, không dùng mẫu âm thanh của bên thứ ba.</p>
-      <p>🎵 Nhạc <small>Music</small>: <a href="https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg" target="_blank" rel="noopener">Satie – Gymnopédie No. 1</a> — Erik Satie · Robin Alciatore (piano, Musopen) (<a href="https://commons.wikimedia.org/wiki/Template:PD-author" target="_blank" rel="noopener">Public domain</a>) · <a href="https://commons.wikimedia.org/wiki/File:Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier,_Book_1_-_01_Prelude_No._1_in_C_major,_BWV_846.ogg" target="_blank" rel="noopener">Bach – Prelude in C major, BWV 846</a> — J. S. Bach · Kimiko Ishizaka (piano) (<a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0</a>) · <a href="https://commons.wikimedia.org/wiki/File:Air_-_Air_Force_Strings_-_United_States_Air_Force_Band.mp3" target="_blank" rel="noopener">Bach – Air on the G String</a> — J. S. Bach · U.S. Air Force Strings (<a href="https://commons.wikimedia.org/wiki/Template:PD-USGov-Military-Air_Force" target="_blank" rel="noopener">Public domain</a>) · <a href="https://commons.wikimedia.org/wiki/File:Nocturne_in_E_flat_major,_Op._9_no._2.mp3" target="_blank" rel="noopener">Chopin – Nocturne Op. 9 No. 2</a> — F. Chopin · Frank Levy (piano, Musopen) (<a href="https://creativecommons.org/publicdomain/mark/1.0/" target="_blank" rel="noopener">Public domain</a>) · <a href="https://commons.wikimedia.org/wiki/File:Robert_Schumann_-_scenes_from_childhood,_op._15_-_vii._dreaming.ogg" target="_blank" rel="noopener">Schumann – Träumerei</a> — R. Schumann · Musopen (piano) (<a href="https://commons.wikimedia.org/wiki/Template:PD-author" target="_blank" rel="noopener">Public domain</a>) · <a href="https://commons.wikimedia.org/wiki/File:Meditation_Impromptu_02_(ISRC_USUAN1100162).mp3" target="_blank" rel="noopener">Meditation Impromptu 02</a> — Kevin MacLeod (incompetech.com) (<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>). Nguồn: Wikimedia Commons.</p>
+      <p>🪷 Nhạc thiền <small>Meditation music</small>: “<a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100691" target="_blank" rel="noopener">Ripples</a>” — Kevin MacLeod (<a href="https://incompetech.com" target="_blank" rel="noopener">incompetech.com</a>), licensed under Creative Commons: By Attribution 4.0 (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>) · “<a href="https://www.chosic.com/download-audio/27283/" target="_blank" rel="noopener">Yugen – Emotional Ethnic Music</a>” — <a href="https://soundcloud.com/keysofmoon" target="_blank" rel="noopener">Keys of Moon</a>, Attribution 4.0 International (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), via chosic.com. Âm thanh đã được chuẩn hoá âm lượng, nén nhẹ, cắt khoảng lặng và thêm fade <small>Audio loudness-normalised, lightly compressed, silence-trimmed, faded</small>.</p>
+      <p>🎻 Nhạc cổ điển <small>Classical</small>: <a href="https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg" target="_blank" rel="noopener">Satie – Gymnopédie No. 1</a> — Erik Satie · Robin Alciatore (piano, Musopen) (<a href="https://commons.wikimedia.org/wiki/Template:PD-author" target="_blank" rel="noopener">Public domain</a>) · <a href="https://commons.wikimedia.org/wiki/File:Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier,_Book_1_-_01_Prelude_No._1_in_C_major,_BWV_846.ogg" target="_blank" rel="noopener">Bach – Prelude in C major, BWV 846</a> — J. S. Bach · Kimiko Ishizaka (piano) (<a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0</a>) · <a href="https://commons.wikimedia.org/wiki/File:Air_-_Air_Force_Strings_-_United_States_Air_Force_Band.mp3" target="_blank" rel="noopener">Bach – Air on the G String</a> — J. S. Bach · U.S. Air Force Strings (<a href="https://commons.wikimedia.org/wiki/Template:PD-USGov-Military-Air_Force" target="_blank" rel="noopener">Public domain</a>) · <a href="https://commons.wikimedia.org/wiki/File:Nocturne_in_E_flat_major,_Op._9_no._2.mp3" target="_blank" rel="noopener">Chopin – Nocturne Op. 9 No. 2</a> — F. Chopin · Frank Levy (piano, Musopen) (<a href="https://creativecommons.org/publicdomain/mark/1.0/" target="_blank" rel="noopener">Public domain</a>) · <a href="https://commons.wikimedia.org/wiki/File:Robert_Schumann_-_scenes_from_childhood,_op._15_-_vii._dreaming.ogg" target="_blank" rel="noopener">Schumann – Träumerei</a> — R. Schumann · Musopen (piano) (<a href="https://commons.wikimedia.org/wiki/Template:PD-author" target="_blank" rel="noopener">Public domain</a>) · <a href="https://commons.wikimedia.org/wiki/File:Meditation_Impromptu_02_(ISRC_USUAN1100162).mp3" target="_blank" rel="noopener">Meditation Impromptu 02</a> — Kevin MacLeod (incompetech.com) (<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>). Nguồn: Wikimedia Commons.</p>
     </details>
     <p class="closing">Thở chậm, mỉm cười, và cảm nhận sự đủ đầy. 🪷</p>
   </footer>
 </main>
 <script src="affirmations.js?v=8a6a8860"></script>
-<script src="music.js?v=0f08058e"></script>
+<script src="music.js?v=20dcd443"></script>
 <script src="config.js?v=1a4d25de"></script>
-<script src="app.js?v=18fc1e5d"></script>
+<script src="app.js?v=559c55af"></script>
 <script src="pwa.js?v=895aae9e"></script>
 <script>
 addEventListener("load", () => setTimeout(async () => {

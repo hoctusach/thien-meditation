@@ -2,17 +2,22 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
 // Nhạc nền: các bản nhạc không lời thật (public domain / CC0 / CC BY) — xem audio/music/tracks.json & README.
 // Two <audio> players (A/B) through Web Audio so tracks crossfade smoothly; files stream (no full decode).
 (() => {
-  const TRACKS = [
-    { id: "gymnopedie", vi: "Gymnopédie số 1", en: "Satie – Gymnopédie No. 1", by: "Erik Satie · Robin Alciatore (Musopen)", lic: "Public domain" },
-    { id: "bach-prelude", vi: "Khúc dạo đầu Đô trưởng", en: "Bach – Prelude in C major", by: "J. S. Bach · Kimiko Ishizaka", lic: "CC0" },
-    { id: "air", vi: "Khúc Air (dây Sol)", en: "Bach – Air on the G String", by: "J. S. Bach · U.S. Air Force Strings", lic: "Public domain" },
-    { id: "nocturne", vi: "Dạ khúc Mi giáng trưởng", en: "Chopin – Nocturne Op. 9 No. 2", by: "F. Chopin · Frank Levy (Musopen)", lic: "Public domain" },
-    { id: "traumerei", vi: "Mơ mộng", en: "Schumann – Träumerei", by: "R. Schumann · Musopen", lic: "Public domain" },
-    { id: "impromptu", vi: "Ngẫu hứng thiền", en: "Meditation Impromptu 02", by: "Kevin MacLeod (incompetech.com)", lic: "CC BY 3.0" },
+  // Two modes (Settings → Chế độ): "thien" = meditation music + bell · "classic" = relax · classical, no bell.
+  const ALL = [
+    { id: "ripples", mode: "thien", vi: "Gợn sóng (đàn tranh)", en: "Ripples", by: "Kevin MacLeod (incompetech.com)", lic: "CC BY 4.0" },
+    { id: "yugen", mode: "thien", vi: "Yugen – nhạc dân tộc sâu lắng", en: "Yugen – Emotional Ethnic Music", by: "Keys of Moon", lic: "CC BY 4.0" },
+    { id: "gymnopedie", mode: "classic", vi: "Gymnopédie số 1", en: "Satie – Gymnopédie No. 1", by: "Erik Satie · Robin Alciatore (Musopen)", lic: "Public domain" },
+    { id: "bach-prelude", mode: "classic", vi: "Khúc dạo đầu Đô trưởng", en: "Bach – Prelude in C major", by: "J. S. Bach · Kimiko Ishizaka", lic: "CC0" },
+    { id: "air", mode: "classic", vi: "Khúc Air (dây Sol)", en: "Bach – Air on the G String", by: "J. S. Bach · U.S. Air Force Strings", lic: "Public domain" },
+    { id: "nocturne", mode: "classic", vi: "Dạ khúc Mi giáng trưởng", en: "Chopin – Nocturne Op. 9 No. 2", by: "F. Chopin · Frank Levy (Musopen)", lic: "Public domain" },
+    { id: "traumerei", mode: "classic", vi: "Mơ mộng", en: "Schumann – Träumerei", by: "R. Schumann · Musopen", lic: "Public domain" },
+    { id: "impromptu", mode: "classic", vi: "Ngẫu hứng thiền", en: "Meditation Impromptu 02", by: "Kevin MacLeod (incompetech.com)", lic: "CC BY 3.0" },
   ];
+  const MODES = { thien: ALL.filter(t => t.mode === "thien"), classic: ALL.filter(t => t.mode === "classic") };
   const FADE = 6;   // seconds of crossfade
 
   window.createPlaylist = function (ctx, out, opts = {}) {
+    let TRACKS = opts.tracks || MODES.thien;
     const decks = [0, 1].map(() => {
       const el = new Audio(); el.preload = "auto"; el.crossOrigin = "anonymous";
       const g = ctx.createGain(); g.gain.value = 0;
@@ -47,8 +52,10 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
       opts.onChange && opts.onChange(i, TRACKS[i]);
     }
     return {
-      tracks: TRACKS, get current() { return cur; }, get element() { return decks[active].el; },
+      get tracks() { return TRACKS; }, get current() { return cur; }, get element() { return decks[active].el; },
       play(i) { play(i); },
+      // switch to another mode's list: crossfade if sound is on, otherwise just select (no sound)
+      setTracks(list, i = 0) { TRACKS = list; if (running) play(i); else { cur = -1; this.select(i); } },
       next() { play(cur + 1); }, prev() { play(cur - 1); },
       select(i) { if (running) play(i); else { cur = (i + TRACKS.length) % TRACKS.length; decks[active].el.src = `audio/music/${TRACKS[cur].id}.mp3`; opts.onChange && opts.onChange(cur, TRACKS[cur]); } },
       resume() {                       // (re)start sound for a session
@@ -62,5 +69,6 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
       ensure() { const d = decks[active]; if (running && d.el.paused && d.el.src) { if (d.el.ended) { play(opts.auto && !opts.auto() ? cur : cur + 1); return; } d.el.play().catch(e => console.warn("music", e)); } },
     };
   };
-  window.MUSIC_TRACKS = TRACKS;
+  window.MUSIC_MODES = MODES;
+  window.MUSIC_TRACKS = ALL;
 })();

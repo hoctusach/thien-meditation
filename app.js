@@ -3,12 +3,17 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   const A = window.AFFIRMATIONS || [];
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
-  const state = { breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 40, auto: true, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
+  const state = { mode: "thien", breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 40, auto: true, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
 
   // ---------- saved settings (per device, localStorage); bad/old values are ignored ----------
   const LS = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
                set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
                del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+  // mode: "thien" = meditation music + bell (default, also for bad/old values) · "classic" = relax · classical, no bell
+  const MODES = window.MUSIC_MODES || { thien: [], classic: [] };
+  state.mode = LS.get("thien.mode") === "classic" ? "classic" : "thien";
+  const bellsOn = () => state.mode !== "classic";
+  const modeTracks = () => MODES[state.mode] || MODES.thien;
   ["loop", "shuffle", "breath", "keepGoing"].forEach(id => {          // Settings checkboxes
     const el = $(id), v = LS.get("thien.cb." + id);
     if (v === "1" || v === "0") el.checked = v === "1";
@@ -77,7 +82,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   // ---------- segmented controls (each choice is remembered) ----------
   const segSet = (id, key, b) => {
     $(id).querySelectorAll("button").forEach(x => x.classList.remove("on")); b.classList.add("on");
-    state[key] = key === "lang" || key === "breathPat" ? b.dataset.v : key === "auto" ? b.dataset.v === "1" : Number(b.dataset.v);
+    state[key] = key === "lang" || key === "breathPat" || key === "mode" ? b.dataset.v : key === "auto" ? b.dataset.v === "1" : Number(b.dataset.v);
   };
   const seg = (id, key, cb, storeKey) => {
     const btns = [...$(id).querySelectorAll("button")];
@@ -93,7 +98,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   }, "thien.lang");
   // duration: default is unlimited; new storage key so everyone starts on "Không giới hạn" once
   seg("durSeg", "dur", () => { state.goalNoted = state.dur > 0 && state.elapsed >= state.dur * 60; showTime(); }, "thien.dur.v2");
-  seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } }, "thien.bell");
+  seg("bellSeg", "bell", () => { state.lastBell = Date.now(); if (bellsOn() && state.bell !== 0 && !state.playing) { initAudio(); ctx.resume(); music.bell(); } }, "thien.bell");
   $("shuffle").addEventListener("change", () => {
     makeOrder();
     const p = state.curK == null ? -1 : state.order.indexOf(state.curK);
@@ -121,7 +126,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
     voiceEl.addEventListener("play", () => duck(true)); ["pause", "ended", "error"].forEach(ev => voiceEl.addEventListener(ev, () => { duck(false); ensureMusic(400); }));
     ctx.onstatechange = () => { if (state.playing && ctx.state !== "running" && ctx.state !== "closed") ctx.resume().catch(() => {}); };
     music = createMusic(ctx, musicGain);
-    playlist = createPlaylist(ctx, duckGain, { auto: () => state.auto, onChange: () => { saveTrack(); showTrack(); mediaMeta(); },
+    playlist = createPlaylist(ctx, duckGain, { tracks: modeTracks(), auto: () => state.auto, onChange: () => { saveTrack(); showTrack(); mediaMeta(); },
       onUnexpectedPause: () => ensureMusic(voiceElBusy() ? 0 : 1200) });
     playlist.select(state.track || 0);
   }
@@ -168,7 +173,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   function createMusic(ctx) {
     return {
       // Chosen bell sound (pre-rendered, warm, long decay) — see tools/build_bells.py
-      bell(id) { playBellSound(id || state.bellSound); state.lastBell = Date.now(); }
+      bell(id) { if (!bellsOn()) return; playBellSound(id || state.bellSound); state.lastBell = Date.now(); }
     };
   }
 
@@ -177,7 +182,8 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
     { id: "thien", vi: "Chuông thiền", en: "Meditation bell" },
   ];
   window.BELL_SOUNDS = BELL_SOUNDS;
-  const bellBufs = {};
+  const bellBufs = {}, bellSrcs = new Set();
+  function silenceBells() { bellSrcs.forEach(s => { try { s.stop(ctx.currentTime + 0.05); } catch (e) {} }); bellSrcs.clear(); }
   let bellGain = null;
   const bv = () => Math.pow($("bellVol").value / 100, 1.5) * 1.6;
   function loadBell(id) {
@@ -188,7 +194,10 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
     initAudio();
     if (!bellGain) { bellGain = ctx.createGain(); bellGain.connect(master); }
     bellGain.gain.value = bv();
-    try { const buf = await loadBell(id); const s = ctx.createBufferSource(); s.buffer = buf; s.connect(bellGain); s.start(); } catch (e) { console.warn("bell", e); }
+    try {
+      const buf = await loadBell(id); const s = ctx.createBufferSource(); s.buffer = buf; s.connect(bellGain);
+      bellSrcs.add(s); s.onended = () => bellSrcs.delete(s); s.start(); window.__bellCount = (window.__bellCount || 0) + 1;
+    } catch (e) { console.warn("bell", e); }
   }
   state.bellSound = "thien";   // single fixed bell (Chuông thiền, 3 strikes) — no picker
   $("bellPreview").onclick = () => { initAudio(); ctx.resume(); playBellSound(state.bellSound); };
@@ -196,10 +205,19 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   $("bellVol").oninput = () => { if (bellGain) bellGain.gain.value = bv(); try { localStorage.setItem("thien.bellVol", $("bellVol").value); } catch (e) {} };
 
   // ---------- now playing (music playlist UI) ----------
-  const TR = window.MUSIC_TRACKS || [];
-  TR.forEach((t, i) => { const o = document.createElement("option"); o.value = i; o.textContent = `${i + 1}. ${t.en}`; $("trackSel").appendChild(o); });
-  { const t = LS.get("thien.track"), k = Number(t); state.track = t !== null && Number.isInteger(k) && k >= 0 && k < TR.length ? k : 0; }
-  function saveTrack() { state.track = playlist.current; try { localStorage.setItem("thien.track", state.track); } catch (e) {} }
+  let TR = modeTracks();
+  const trackKey = m => "thien.track." + m;
+  function loadTrack() {
+    let t = LS.get(trackKey(state.mode));
+    if (t === null && state.mode === "classic") t = LS.get("thien.track");   // before modes there was one (classical) list
+    const k = Number(t); state.track = t !== null && Number.isInteger(k) && k >= 0 && k < TR.length ? k : 0;
+  }
+  function fillTracks() {
+    $("trackSel").textContent = "";
+    TR.forEach((t, i) => { const o = document.createElement("option"); o.value = i; o.textContent = `${i + 1}. ${t.en}`; $("trackSel").appendChild(o); });
+  }
+  fillTracks(); loadTrack();
+  function saveTrack() { if (playlist.tracks !== TR) return; state.track = playlist.current; LS.set(trackKey(state.mode), state.track); }
   function showTrack() {
     const i = playlist && playlist.current >= 0 ? playlist.current : state.track || 0, t = TR[i] || {};
     $("trackName").innerHTML = `${t.en || ""} <small>${t.vi || ""}</small>`;
@@ -217,6 +235,20 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   $("prevTrack").onclick = () => goTrack((playlist ? playlist.current : state.track) - 1);
   $("nextTrack").onclick = () => goTrack((playlist ? playlist.current : state.track) + 1);
   $("trackSel").onchange = () => goTrack(Number($("trackSel").value));
+
+  // ---------- mode: "thien" (meditation music + bell) · "classic" (relax · classical, no bell) ----------
+  function applyMode() {
+    document.querySelectorAll(".bellRow").forEach(r => r.hidden = !bellsOn());
+    $("modeNote").hidden = bellsOn();
+  }
+  seg("modeSeg", "mode", () => {
+    TR = modeTracks(); fillTracks(); loadTrack(); applyMode();
+    if (!bellsOn()) { if (ctx) silenceBells(); }
+    else state.lastBell = Date.now();                // interval bells count from now
+    if (playlist) playlist.setTracks(TR, state.track);   // crossfades if music is playing (session or preview)
+    showTrack(); mediaMeta();
+  }, "thien.mode");
+  applyMode();
 
   // ---------- breathing animation (4s in · 2s hold · 6s out) ----------
   let breathTimer;
@@ -308,15 +340,17 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   const BELL_CLEAR_MS = 23000;
   // the pause after each quote; returns false if interrupted, "done" if the session should finish
   async function pauseAfter(tok) {
-    let end = Date.now() + state.gap * 1000;
+    const base = Date.now() + state.gap * 1000;
+    let end = base;
     while (Date.now() < end) {
+      if (!bellsOn() && end > base) end = Math.max(base, Date.now());   // switched to "no bell" mode: drop the bell wait
       if (!await wait(Math.min(1000, end - Date.now()), tok)) return false;
       const left = end - Date.now();
       if (state.dur && state.elapsed >= state.dur * 60 && !state.goalNoted) {
         state.goalNoted = true;
         if (!$("keepGoing").checked) return "done";
-        if (state.bell !== 0 && left > 6000) { music.bell(); end = Math.max(end, Date.now() + BELL_CLEAR_MS); }   // "goal reached", then keep going
-      } else if (state.bell > 0 && left > 6000 && Date.now() - state.lastBell >= state.bell * 60000) {
+        if (bellsOn() && state.bell !== 0 && left > 6000) { music.bell(); end = Math.max(end, Date.now() + BELL_CLEAR_MS); }   // "goal reached", then keep going
+      } else if (bellsOn() && state.bell > 0 && left > 6000 && Date.now() - state.lastBell >= state.bell * 60000) {
         music.bell(); end = Math.max(end, Date.now() + BELL_CLEAR_MS);   // only inside a pause; the pause stretches so no speech is over the bell
       }
     }
@@ -325,7 +359,8 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   async function runLoop() {
     const tok = ++state.token;
     stopVoice();
-    if (state.bell !== 0 && state.freshStart && !state.quietStart) { state.freshStart = false; music.bell(); if (!await wait(BELL_CLEAR_MS, tok)) return; }
+    if (bellsOn() && state.bell !== 0 && state.freshStart && !state.quietStart) { state.freshStart = false; music.bell();
+      for (const t0 = Date.now(); Date.now() - t0 < BELL_CLEAR_MS && bellsOn();) if (!await wait(500, tok)) return; }
     else await wait(1200, tok);
     while (state.playing && tok === state.token) {
       if (!state.order.length) makeOrder();
@@ -373,7 +408,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
     breathe();
     try { window.dispatchEvent(new Event("thien:stopped")); } catch (e) {}
     if (finished) {
-      if (state.bell !== 0) music.bell();
+      if (bellsOn() && state.bell !== 0) music.bell();
       $("lineVi").className = "vi"; $("lineTag").textContent = "";
       $("lineVi").textContent = "Cảm ơn bạn. Mọi điều tốt đẹp đang đến.";
       $("lineEn").textContent = "Thank you. All good things are on their way.";

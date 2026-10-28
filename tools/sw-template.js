@@ -3,6 +3,7 @@ const VERSION = "__VERSION__";
 const CACHE = "thien-" + VERSION;
 const ASSETS = __ASSETS__;
 const MCACHE = "thien-music-__MUSIC_VERSION__";  // background music: cached on first play, kept across app updates
+const MUSIC = __MUSIC__;   // audio/music/<file> → sha256 (lets an update keep cached tracks that did not change)
 const CFG = "thien-config";                      // small cache used as a key/value store (reminder settings)
 
 self.addEventListener("install", e => {
@@ -11,7 +12,20 @@ self.addEventListener("install", e => {
 });
 self.addEventListener("activate", e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k.startsWith("thien-") && k !== CACHE && k !== CFG && k !== MCACHE) await caches.delete(k);
+    const keys = await caches.keys();
+    for (const k of keys) if (k.startsWith("thien-music-") && k !== MCACHE) {   // carry over unchanged tracks
+      try {
+        const old = await caches.open(k), mc = await caches.open(MCACHE);
+        for (const req of await old.keys()) {
+          const rel = Object.keys(MUSIC).find(f => new URL(req.url).pathname.endsWith("/" + f));
+          if (!rel || await mc.match(req)) continue;
+          const res = await old.match(req), buf = await res.clone().arrayBuffer();
+          const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", buf))].map(b => b.toString(16).padStart(2, "0")).join("");
+          if (hex === MUSIC[rel]) await mc.put(req, res);
+        }
+      } catch (x) {}
+    }
+    for (const k of keys) if (k.startsWith("thien-") && k !== CACHE && k !== CFG && k !== MCACHE) await caches.delete(k);
     await self.clients.claim();
   })());
 });

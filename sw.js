@@ -1,16 +1,16 @@
 // Service worker — offline cache + daily reminder notifications.
-const VERSION = "30089d1e5f";
+const VERSION = "354d69983b";
 const CACHE = "thien-" + VERSION;
 const ASSETS = [
  "./",
  "affirmations.js?v=8a6a8860",
- "app.js?v=18fc1e5d",
+ "app.js?v=559c55af",
  "config.js?v=1a4d25de",
  "index.html",
  "manifest.webmanifest",
- "music.js?v=0f08058e",
+ "music.js?v=20dcd443",
  "pwa.js?v=895aae9e",
- "style.css?v=5168f57e",
+ "style.css?v=90445731",
  "audio/bell5.mp3",
  "audio/en_01.mp3",
  "audio/en_02.mp3",
@@ -121,7 +121,17 @@ const ASSETS = [
  "icons/maskable-192.png",
  "icons/maskable-512.png"
 ];
-const MCACHE = "thien-music-9b85ea9704";  // background music: cached on first play, kept across app updates
+const MCACHE = "thien-music-0161c9565b";  // background music: cached on first play, kept across app updates
+const MUSIC = {
+ "air.mp3": "b9821468f0aedb9bf94cc3099759352e94bec141957f6645b4e816a6ef713379",
+ "bach-prelude.mp3": "e778d63e952599eb74ad07427c252ffe4db0b93b0b1ced0d3d90ccce07f1d708",
+ "gymnopedie.mp3": "6e3824ae6490507295d88f576f36c5941155c0abf7ff11f415afe0b6f1cb9b0b",
+ "impromptu.mp3": "edcb8581267b6c8ce219cba82bcc166c72dfa48022a08f02395d4b77c4858ad2",
+ "nocturne.mp3": "d5703ec7d0493cf994e7ce6ccd154df3dd648ffef9089aace4db2394d5602089",
+ "ripples.mp3": "fbb3c09fdadc7204d2af69598e0d7b1ad1c0ef34123996a4127c921becc2cdb1",
+ "traumerei.mp3": "e4ac5bb505936c87a9fdeb9bd86ff63d5671afaf355695db8510e5e94ab7f552",
+ "yugen.mp3": "1ca1c4d477df9dff61504928670af1dfc0c3a8f95a2e7772ccd0b5ea15fcd124"
+};   // audio/music/<file> → sha256 (lets an update keep cached tracks that did not change)
 const CFG = "thien-config";                      // small cache used as a key/value store (reminder settings)
 
 self.addEventListener("install", e => {
@@ -130,7 +140,20 @@ self.addEventListener("install", e => {
 });
 self.addEventListener("activate", e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k.startsWith("thien-") && k !== CACHE && k !== CFG && k !== MCACHE) await caches.delete(k);
+    const keys = await caches.keys();
+    for (const k of keys) if (k.startsWith("thien-music-") && k !== MCACHE) {   // carry over unchanged tracks
+      try {
+        const old = await caches.open(k), mc = await caches.open(MCACHE);
+        for (const req of await old.keys()) {
+          const rel = Object.keys(MUSIC).find(f => new URL(req.url).pathname.endsWith("/" + f));
+          if (!rel || await mc.match(req)) continue;
+          const res = await old.match(req), buf = await res.clone().arrayBuffer();
+          const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", buf))].map(b => b.toString(16).padStart(2, "0")).join("");
+          if (hex === MUSIC[rel]) await mc.put(req, res);
+        }
+      } catch (x) {}
+    }
+    for (const k of keys) if (k.startsWith("thien-") && k !== CACHE && k !== CFG && k !== MCACHE) await caches.delete(k);
     await self.clients.claim();
   })());
 });

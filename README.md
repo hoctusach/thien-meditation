@@ -9,7 +9,8 @@ Trang web tĩnh (HTML/CSS/JS, không cần build).
 - `audio/en_XX.mp3` — giọng “Heart” (`af_heart`) của [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) v1.0 by hexgrad — Apache-2.0, chạy local qua kokoro-onnx, speed 0.75; −18.5 LUFS, 44.1 kHz mono 64k.
 - Tạo lại giọng: `tools/build_voice.py` (phiên bản thư viện ghim trong `tools/requirements-voice.txt`; không còn dùng edge-tts).
 - `samples/` — mẫu 3 giọng nữ miền Nam.
-- Nhạc nền (`music.js`): **6 bản nhạc không lời thật** (public domain / CC0 / CC BY), phát lần lượt từng bài trọn vẹn rồi chuyển bài êm (crossfade 6s); chế độ “Lặp 1 bài”. Có ‹ › và menu chọn bài; khi chưa bắt đầu thiền, đổi bài sẽ phát thử 20s. Nhạc tự giảm nhẹ (~3 dB) khi giọng đọc. Xem mục “Nhạc nền” bên dưới.
+- **Chế độ** (đầu phần Cài đặt, nhớ theo thiết bị `thien.mode`, mặc định Thiền cho mọi thiết bị): **Thiền · có chuông** = 2 bản nhạc thiền + chuông như trước; **Thư giãn · Nhạc cổ điển** (Cổ điển · không chuông) = 6 bản cổ điển, **không có chuông nào** (không chuông định kỳ, không chuông đầu/cuối; ẩn chỉnh chuông). Đổi chế độ giữa buổi: nhạc chuyển êm sang danh sách mới, quy tắc chuông áp dụng ngay (chuông đang reo tắt, bỏ thời gian chờ chuông). Nhắc nhở hằng ngày vẫn reo chuông như cũ.
+- Nhạc nền (`music.js`): **8 bản nhạc không lời thật** (CC BY / public domain / CC0), menu chọn bài chỉ hiện bài của chế độ đang chọn (nhớ bài riêng cho từng chế độ: `thien.track.thien`, `thien.track.classic`), phát lần lượt từng bài trọn vẹn rồi chuyển bài êm (crossfade 6s); chế độ “Lặp 1 bài”. Có ‹ › và menu chọn bài; khi chưa bắt đầu thiền, đổi bài sẽ phát thử 20s. Nhạc tự giảm nhẹ (~3 dB) khi giọng đọc. Xem mục “Nhạc nền” bên dưới.
 - Chuông: “Chuông thiền” 3 hồi (~34 s), tổng hợp bằng `tools/build_bells.py` (chạy lại sẽ tạo đúng y hệt file đang dùng); mặc định **mỗi 5 phút** (chỉ reo trong khoảng lặng, không đè lên giọng đọc), có thể Tắt / 3' / chỉ đầu-cuối.
 - Mỗi câu Việt và mỗi câu Anh là một câu riêng (100 câu), sau mỗi câu là khoảng lặng 12s / 40s / 60s / 2' / 5' (mặc định 40s; thiết bị đã lưu lựa chọn thì giữ nguyên).
 - Hẹn giờ mặc định 10 phút; hết giờ vẫn tự chạy tiếp (đồng hồ hiện `10:00 +m:ss`) cho đến khi bấm ■ Kết thúc. Bỏ chọn “Hết giờ vẫn chạy tiếp” để dừng đúng giờ.
@@ -39,8 +40,17 @@ Trong app: “⏰ Nhắc nhở hằng ngày” → chọn giờ → bật. Có 4
    - Thông báo dùng âm thanh mặc định của hệ thống (web không thể đặt âm chuông riêng); bấm vào thông báo sẽ mở app và reo 3 hồi chuông.
 
 ## Nhạc nền
-File trong `audio/music/` (MP3 112 kbps stereo, chuẩn hoá −24 LUFS, nén động nhẹ, ~17 MB tổng, ~20 phút). Tạo lại bằng `python3 tools/build_music.py` (tải từ Wikimedia Commons; `SAMPLES=1` để tạo thêm đoạn nghe thử 25s trong `samples/music/`). Service worker **không** tải trước nhạc: mỗi bài được lưu vào cache riêng (`thien-music-…`) lần đầu phát, sau đó nghe offline được.
+File trong `audio/music/` (MP3 112 kbps stereo, chuẩn hoá −24 LUFS, nén động nhẹ, ~23 MB tổng, ~26 phút); `audio/music/tracks.json` mô tả 2 chế độ và từng bài. Tạo lại bằng `python3 tools/build_music.py` (tải từ incompetech.com, chosic.com, Wikimedia Commons; `ONLY=ripples,yugen` để chỉ tạo lại vài bài; chạy lại cho ra đúng từng byte; `SAMPLES=1` để tạo thêm đoạn nghe thử 25s trong `samples/music/`). Service worker **không** tải trước nhạc: mỗi bài được lưu vào cache riêng (`thien-music-…`) lần đầu phát, sau đó nghe offline được; khi cập nhật, bài nào không đổi (so sha256) được giữ lại, không phải tải lại.
 
+### Chế độ Thiền · có chuông (Meditation · with bell)
+| # | Bài | Phong cách | Tác giả | Giấy phép | Nguồn |
+|---|---|---|---|---|---|
+| 1 | Ripples (Gợn sóng) | đàn tranh độc tấu, 57 bpm | Kevin MacLeod (incompetech.com) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | [incompetech](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100691) |
+| 2 | Yugen – Emotional Ethnic Music | nhạc dân tộc sâu lắng, chậm | [Keys of Moon](https://soundcloud.com/keysofmoon) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | [chosic.com](https://www.chosic.com/download-audio/27283/) |
+
+Ghi công: *“Ripples” Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0 — https://creativecommons.org/licenses/by/4.0/* · *Yugen - Emotional Ethnic Music by Keys of Moon | https://soundcloud.com/keysofmoon — Attribution 4.0 International (CC BY 4.0) — https://creativecommons.org/licenses/by/4.0/*. Thay đổi: chuẩn hoá âm lượng, nén nhẹ, cắt khoảng lặng, fade. (“Zen Harmony” của Megis đã cân nhắc nhưng Jamendo ghi CC BY-NC-ND 3.0 → không dùng.)
+
+### Chế độ Thư giãn · Nhạc cổ điển (Relax · Classical, không chuông)
 | # | Bài | Phong cách | Tác giả · Trình bày | Giấy phép | Nguồn |
 |---|---|---|---|---|---|
 | 1 | Satie – Gymnopédie No. 1 (Gymnopédie số 1) | dương cầm chậm, thanh thoát | Erik Satie · Robin Alciatore (piano, Musopen) | [Public domain](https://commons.wikimedia.org/wiki/Template:PD-author) | [Commons](https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg) |
@@ -75,7 +85,8 @@ Thời gian mặc định: **Không giới hạn** (đồng hồ đếm lên t�
 
 ## Remembered per device (localStorage)
 Every setting is saved and restored (bad/old values are ignored): language `thien.lang`, duration `thien.dur.v2`, pause `thien.gap`,
-bell interval `thien.bell`, breathing pattern `thien.breath`, music order `thien.auto`, track `thien.track`, volumes
+bell interval `thien.bell`, breathing pattern `thien.breath`, music order `thien.auto`, mode `thien.mode` (`thien` | `classic`, anything else → `thien`), track per mode
+`thien.track.thien` / `thien.track.classic` (the old `thien.track` is read once for the classical list), volumes
 `thien.bellVol` / `thien.musicVol` / `thien.voiceVol`, checkboxes `thien.cb.loop|shuffle|breath|keepGoing`, theme `thien.theme`,
 reminder `thien.reminder`, open/closed sections `thien.open.*`.
 Progress `thien.progress.v1` = `{ last: "vi|<quote text>", order: [...] }` (order only when shuffled). The next session starts

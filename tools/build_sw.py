@@ -18,7 +18,7 @@ html = re.sub(r'(src|href)="((?:affirmations|music|config|app|pwa)\.js|style\.cs
 if not META.search(html):
     html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="app-version" content="">', 1)
 assets = ["./"]
-h = hashlib.sha256(); hm = hashlib.sha256()   # music is cached lazily (on first play), in its own cache
+h = hashlib.sha256(); hm = hashlib.sha256(); music = {}   # music is cached lazily (on first play), in its own cache
 for dp, dns, fns in os.walk("."):
     dns[:] = sorted(d for d in dns if d not in skip_dirs and not d.startswith("."))
     for f in sorted(fns):
@@ -27,12 +27,14 @@ for dp, dns, fns in os.walk("."):
             continue
         data = META.sub('<meta name="app-version" content="">', html).encode() if p == "index.html" else open(p, "rb").read()
         if p.startswith("audio/music/"):
-            hm.update(p.encode()); hm.update(data); continue
+            hm.update(p.encode()); hm.update(data)
+            if p.endswith(".mp3"): music[p[len("audio/music/"):]] = hashlib.sha256(data).hexdigest()
+            continue
         assets.append(stamped.get(p, p)); h.update(p.encode()); h.update(data)
 ver = h.hexdigest()[:10]
 html = META.sub(f'<meta name="app-version" content="{ver}">', html)
 open("index.html", "w", encoding="utf-8").write(html)
 json.dump({"version": ver}, open("version.json", "w"))
 tpl = open("tools/sw-template.js").read()
-open("sw.js", "w").write(tpl.replace("__VERSION__", ver).replace("__MUSIC_VERSION__", hm.hexdigest()[:10]).replace("__ASSETS__", json.dumps(assets, indent=1)))
+open("sw.js", "w").write(tpl.replace("__VERSION__", ver).replace("__MUSIC_VERSION__", hm.hexdigest()[:10]).replace("__ASSETS__", json.dumps(assets, indent=1)).replace("__MUSIC__", json.dumps(music, indent=1)))
 print(len(assets), "assets, version", ver, "· music cache", hm.hexdigest()[:10])

@@ -1,35 +1,49 @@
-"""Download + normalise the background music -> audio/music/*.mp3 (+ samples/music previews with SAMPLES=1).
-All tracks are public domain / CC0 / CC BY (attribution shown in the app and README). Sources: Wikimedia Commons.
+"""Download + normalise the background music -> audio/music/*.mp3 + tracks.json (+ samples/music previews with SAMPLES=1).
+Two modes (setting "Chế độ"): "thien" = meditation music + bell, "classic" = classical/relax music, no bell.
+All tracks are public domain / CC0 / CC BY (attribution shown in the app and README).
+Sources: incompetech.com, chosic.com (Keys of Moon), Wikimedia Commons.
+(Zen Harmony by Megis was considered but Jamendo lists it as CC BY-NC-ND 3.0, so it is not used.)
+ONLY=id1,id2 rebuilds just those tracks (tracks.json is always rewritten).
 Processing: trim silence, gentle compression (so quiet bars are not lost under the voice), linear gain to -24 LUFS,
 true peak <= -2 dBTP, soft fade in/out, MP3 112 kbps stereo.
 """
 import os, json, subprocess, urllib.request
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = os.environ.get("MUSIC_SRC", "/workspace/music-cand")
-UA = {"User-Agent": "thien-meditation/1.0 (static site build)"}
+UA = {"User-Agent": "Mozilla/5.0 (thien-meditation static site build)"}
 C = "https://upload.wikimedia.org/wikipedia/commons/"
-TRACKS = [  # id, vi, en (title), artist/performer, licence, licence url, commons page, file url, style
-  dict(id="gymnopedie", vi="Gymnopédie số 1", en="Satie – Gymnopédie No. 1", by="Erik Satie · Robin Alciatore (piano, Musopen)",
+TRACKS = [  # id, mode, vi, en (title), artist/performer, licence, licence url, source page, file url, local source name
+  # ---- mode "thien": meditation music (with the bell) ----
+  dict(id="ripples", mode="thien", vi="Gợn sóng (đàn tranh)", en="Ripples", by="Kevin MacLeod (incompetech.com)",
+       lic="CC BY 4.0", licurl="https://creativecommons.org/licenses/by/4.0/",
+       page="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100691",
+       url="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Ripples.mp3", src="ripples.mp3"),
+  dict(id="yugen", mode="thien", vi="Yugen – nhạc dân tộc sâu lắng", en="Yugen – Emotional Ethnic Music", by="Keys of Moon",
+       lic="CC BY 4.0", licurl="https://creativecommons.org/licenses/by/4.0/",
+       page="https://www.chosic.com/download-audio/27283/", artist_url="https://soundcloud.com/keysofmoon",
+       url="https://www.chosic.com/wp-content/uploads/2021/02/Yugen-Emotional-Ethnic-Music(chosic.com).mp3", src="yugen.mp3"),
+  # ---- mode "classic": relax · classical (no bell) ----
+  dict(id="gymnopedie", mode="classic", vi="Gymnopédie số 1", en="Satie – Gymnopédie No. 1", by="Erik Satie · Robin Alciatore (piano, Musopen)",
        lic="Public domain", licurl="https://commons.wikimedia.org/wiki/Template:PD-author",
        page="https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg",
        url=C + "9/90/Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg", src="gymno-alciatore.ogg"),
-  dict(id="bach-prelude", vi="Khúc dạo đầu Đô trưởng", en="Bach – Prelude in C major, BWV 846", by="J. S. Bach · Kimiko Ishizaka (piano)",
+  dict(id="bach-prelude", mode="classic", vi="Khúc dạo đầu Đô trưởng", en="Bach – Prelude in C major, BWV 846", by="J. S. Bach · Kimiko Ishizaka (piano)",
        lic="CC0 1.0", licurl="https://creativecommons.org/publicdomain/zero/1.0/",
        page="https://commons.wikimedia.org/wiki/File:Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier,_Book_1_-_01_Prelude_No._1_in_C_major,_BWV_846.ogg",
        url=C + "b/b6/Kimiko_Ishizaka_-_Bach_-_Well-Tempered_Clavier%2C_Book_1_-_01_Prelude_No._1_in_C_major%2C_BWV_846.ogg", src="bach-prelude-c.ogg"),
-  dict(id="air", vi="Khúc Air (dây đàn Sol)", en="Bach – Air on the G String", by="J. S. Bach · U.S. Air Force Strings",
+  dict(id="air", mode="classic", vi="Khúc Air (dây đàn Sol)", en="Bach – Air on the G String", by="J. S. Bach · U.S. Air Force Strings",
        lic="Public domain (U.S. Government work)", licurl="https://commons.wikimedia.org/wiki/Template:PD-USGov-Military-Air_Force",
        page="https://commons.wikimedia.org/wiki/File:Air_-_Air_Force_Strings_-_United_States_Air_Force_Band.mp3",
        url=C + "e/ec/Air_-_Air_Force_Strings_-_United_States_Air_Force_Band.mp3", src="air-g-string.mp3"),
-  dict(id="nocturne", vi="Dạ khúc Mi giáng trưởng", en="Chopin – Nocturne Op. 9 No. 2", by="F. Chopin · Frank Levy (piano, Musopen)",
+  dict(id="nocturne", mode="classic", vi="Dạ khúc Mi giáng trưởng", en="Chopin – Nocturne Op. 9 No. 2", by="F. Chopin · Frank Levy (piano, Musopen)",
        lic="Public domain", licurl="https://creativecommons.org/publicdomain/mark/1.0/",
        page="https://commons.wikimedia.org/wiki/File:Nocturne_in_E_flat_major,_Op._9_no._2.mp3",
        url=C + "8/82/Nocturne_in_E_flat_major%2C_Op._9_no._2.mp3", src="nocturne-op9-2.mp3"),
-  dict(id="traumerei", vi="Mơ mộng (Träumerei)", en="Schumann – Träumerei", by="R. Schumann · Musopen (piano)",
+  dict(id="traumerei", mode="classic", vi="Mơ mộng (Träumerei)", en="Schumann – Träumerei", by="R. Schumann · Musopen (piano)",
        lic="Public domain", licurl="https://commons.wikimedia.org/wiki/Template:PD-author",
        page="https://commons.wikimedia.org/wiki/File:Robert_Schumann_-_scenes_from_childhood,_op._15_-_vii._dreaming.ogg",
        url=C + "0/06/Robert_Schumann_-_scenes_from_childhood%2C_op._15_-_vii._dreaming.ogg", src="traumerei.ogg"),
-  dict(id="impromptu", vi="Ngẫu hứng thiền", en="Meditation Impromptu 02", by="Kevin MacLeod (incompetech.com)",
+  dict(id="impromptu", mode="classic", vi="Ngẫu hứng thiền", en="Meditation Impromptu 02", by="Kevin MacLeod (incompetech.com)",
        lic="CC BY 3.0", licurl="https://creativecommons.org/licenses/by/3.0/",
        page="https://commons.wikimedia.org/wiki/File:Meditation_Impromptu_02_(ISRC_USUAN1100162).mp3",
        url=C + "0/09/Meditation_Impromptu_02_%28ISRC_USUAN1100162%29.mp3", src="meditation-impromptu-02.mp3"),
@@ -64,9 +78,13 @@ if __name__ == "__main__":
     keep = {f"{t['id']}.mp3" for t in TRACKS}
     for f in os.listdir("audio/music"):
         if f not in keep: os.remove(os.path.join("audio/music", f))
+    only = set(filter(None, os.environ.get("ONLY", "").split(",")))
     for t in TRACKS:
+        if only and t["id"] not in only: continue
         build(t, f"audio/music/{t['id']}.mp3"); print("built", t["id"])
-    json.dump([{k: t[k] for k in ("id", "vi", "en", "by", "lic", "licurl", "page")} for t in TRACKS],
+    json.dump({"modes": [{"id": "thien", "vi": "Thiền · có chuông", "en": "Meditation · with bell", "bell": True},
+                         {"id": "classic", "vi": "Thư giãn · Nhạc cổ điển", "en": "Relax · Classical, no bell", "bell": False}],
+               "tracks": [{k: t[k] for k in ("id", "mode", "vi", "en", "by", "lic", "licurl", "page", "artist_url") if k in t} for t in TRACKS]},
               open("audio/music/tracks.json", "w"), ensure_ascii=False, indent=1)
     if os.environ.get("SAMPLES"):    # 25 s preview clips to send around (not part of the app)
         os.makedirs("samples/music", exist_ok=True)
