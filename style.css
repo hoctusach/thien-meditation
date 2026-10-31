@@ -23,7 +23,7 @@ box-shadow:0 0 60px rgba(243,201,139,.55),0 0 120px rgba(196,127,179,.35);transf
 .breath-text small{font-weight:400;font-size:.75rem;opacity:.75}
 .lines{min-height:130px;margin:18px 0 6px;padding:0 6px;transition:opacity .8s}
 .lines.fade{opacity:0}
-.vi{font-size:1.45rem;line-height:1.45;margin:0 0 .5em;font-weight:400}
+.vi{font-size:1.45rem;line-height:1.45;margin:0 0 .5em;font-weight:400;white-space:pre-line}
 .en{font-size:1.02rem;color:var(--muted);margin:0;font-style:italic}
 .timer{font-variant-numeric:tabular-nums;color:var(--gold);letter-spacing:.08em}
 .muted{color:var(--muted);font-size:.85em}

@@ -2,9 +2,9 @@
 <html lang="vi">
 <head>
 <script>/* self-heal: if a stale cached script is running (error or missing load marker), clear old caches once and reload */
-window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(app|pwa|music|affirmations|config)\.js/.test(e.filename)) window.__thienErr = 1; });</script>
+window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(app|pwa|music|affirmations|quotes|config)\.js/.test(e.filename)) window.__thienErr = 1; });</script>
 <meta charset="utf-8">
-<meta name="app-version" content="354d69983b">
+<meta name="app-version" content="60f0daf68e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Thiền · Thay đổi tần số</title>
 <meta name="description" content="Thiền để thay đổi tần số — nhạc nhẹ và câu khẳng định song ngữ Việt – Anh. Meditate to shift your frequency.">
@@ -21,7 +21,7 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Thiền">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="stylesheet" href="style.css?v=90445731">
+<link rel="stylesheet" href="style.css?v=f4275c4a">
 </head>
 <body>
 <div class="bg" id="bgA"></div><div class="bg" id="bgB"></div>
@@ -224,14 +224,15 @@ window.__thienErr = 0; addEventListener("error", e => { if (e.filename && /\/(ap
   </footer>
 </main>
 <script src="affirmations.js?v=8a6a8860"></script>
+<script src="quotes.js?v=b0a9d2c9"></script>
 <script src="music.js?v=20dcd443"></script>
 <script src="config.js?v=1a4d25de"></script>
-<script src="app.js?v=559c55af"></script>
+<script src="app.js?v=45d735ab"></script>
 <script src="pwa.js?v=895aae9e"></script>
 <script>
 addEventListener("load", () => setTimeout(async () => {
-  // healthy = no script error, app started, and all 5 scripts are current (old cached copies have no load marker)
-  if (window.THIEN && !window.__thienErr && (window.__thienJS || 0) >= 5) return;
+  // healthy = no script error, app started, and all 6 scripts are current (old cached copies have no load marker)
+  if (window.THIEN && !window.__thienErr && (window.__thienJS || 0) >= 6) return;
   try { if (sessionStorage.getItem("thien.heal")) return; sessionStorage.setItem("thien.heal", "1"); } catch (e) { return; }
   try {
     // drop the old worker + its caches; the next load comes straight from the network and registers a fresh worker
