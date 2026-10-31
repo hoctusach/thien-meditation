@@ -27,11 +27,11 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
 
   // ---------- items: every VI line and every EN line is its own quote ----------
   const ITEMS = [];
-  A.forEach((a, n) => { ITEMS.push({ n, lang: "vi", text: a.vi, own: a.group === "Của bạn", voice: true }); ITEMS.push({ n, lang: "en", text: a.en, own: a.group === "Của bạn", voice: true }); });
+  A.forEach((a, n) => { ITEMS.push({ n, lang: "vi", text: a.vi, voice: true }); ITEMS.push({ n, lang: "en", text: a.en, voice: true }); });
   // Quote library (quotes.js): after the affirmations, so earlier indexes stay put. A quote joins the order only once its
   // voice file exists (it.voice, from tools/build_quotes.py); each language of a quote is its own item, like the affirmations.
   (window.QUOTES || []).forEach(q => ["vi", "en"].forEach(lang => {
-    if (q[lang]) ITEMS.push({ q: q.id, lang, text: q[lang], author: q.author, own: false, voice: (q.vo || []).includes(lang) });
+    if (q[lang]) ITEMS.push({ q: q.id, lang, text: q[lang], author: q.author, voice: (q.vo || []).includes(lang) });
   }));
   const fileOf = it => it.q ? `audio/q/${it.lang}_${it.q}.mp3` : `audio/${it.lang}_${pad(it.n + 1)}.mp3`;
   const allowed = it => it.voice && (state.lang === "both" || state.lang === it.lang);
@@ -51,9 +51,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   const makeOrder = () => {
     let ord = ITEMS.map((_, k) => k).filter(k => allowed(ITEMS[k]));
     if ($("shuffle").checked) {
-      const own = ord.filter(k => ITEMS[k].own), rest = ord.filter(k => !ITEMS[k].own);
-      for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
-      ord = own.concat(rest);
+      for (let i = ord.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ord[i], ord[j]] = [ord[j], ord[i]]; }   // every line, affirmations and quotes alike
     }
     state.order = ord;
     document.querySelectorAll("#allLines li").forEach((li, k) => li.classList.toggle("off", !allowed(ITEMS[k])));
