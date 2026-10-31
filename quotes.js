@@ -10,7 +10,7 @@ window.QUOTES = [
  {"id": "q0008", "vi": "Khi ta nhận diện được cơn giận,\nta đã bắt đầu tự do khỏi nó.", "vo": ["vi"], "author": "Giận"},
  {"id": "q0009", "vi": "Không ai có thể làm ta khổ nếu trong ta không có sẵn hạt giống khổ.\nKhi giận, hãy nhìn sâu để hiểu.", "vo": ["vi"], "author": "Giận"},
  {"id": "q0010", "vi": "Ôm lấy cơn giận bằng hơi thở chánh niệm,\ngiống như mẹ ôm con thơ vào lòng.", "vo": ["vi"], "author": "Giận"},
- {"id": "q0011", "vi": "Mọi sự trên đời đều có nhân duyên.\nGieo nhân lành sẽ gặt quả lành.", "author": "Muôn Kiếp Nhân Sinh"},
+ {"id": "q0011", "vi": "Mọi sự trên đời đều có nhân duyên.\nGieo nhân lành sẽ gặt quả lành.", "vo": ["vi"], "author": "Muôn Kiếp Nhân Sinh"},
  {"id": "q0012", "vi": "Con người không chỉ sống một đời.\nMỗi kiếp là một hành trình học hỏi và trả nợ.", "author": "Muôn Kiếp Nhân Sinh"},
  {"id": "q0013", "vi": "Sống có ý nghĩa là sống sao cho bớt khổ, thêm an vui cho mình và người.", "author": "Muôn Kiếp Nhân Sinh"},
  {"id": "q0014", "vi": "Nhân quả không bỏ sót một ai.\nTất cả đều được ghi lại trong dòng chảy vũ trụ.", "author": "Muôn Kiếp Nhân Sinh"},
