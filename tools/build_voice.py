@@ -11,6 +11,7 @@ Usage: /workspace/vnv/bin/python tools/build_voice.py [vi|en|all] [quotes]
        ONLY=9,13        only (re)make those line numbers (1-based); quotes: ONLY=q0001,q0005 or ONLY=1,5; all other files untouched.
        FORCE=1          quotes: also redo files that already exist.   LIMIT=50  quotes: make at most 50 files this run.
        DRY=1            list what would be made, load no model.
+       NOCHECK=1        EN only: skip the Whisper read-back check (when Hugging Face is unreachable); listen to the files instead.
 """
 import json, subprocess, sys, difflib, os, re
 import numpy as np
@@ -30,6 +31,7 @@ ONLY = {x.strip().lower() for x in os.environ.get("ONLY", "").split(",") if x.st
 SCOPE = sys.argv[2] if len(sys.argv) > 2 else "affirmations"
 FORCE, DRY = os.environ.get("FORCE") == "1", os.environ.get("DRY") == "1"
 LIMIT = int(os.environ.get("LIMIT") or 0)
+NOCHECK = os.environ.get("NOCHECK") == "1"
 
 def spoken(text):
     """What the TTS reads: line breaks inside a quote become spaces; curly apostrophes -> straight."""
@@ -90,8 +92,10 @@ def build_en():
     if DRY or not todo: return [t[2] for t in todo]
     import soundfile as sf
     from kokoro_onnx import Kokoro
-    from faster_whisper import WhisperModel
-    k = Kokoro(*kokoro_files()); m = WhisperModel("small", device="cpu", compute_type="int8")
+    k = Kokoro(*kokoro_files())
+    if not NOCHECK:
+        from faster_whisper import WhisperModel
+        m = WhisperModel("small", device="cpu", compute_type="int8")
     for tag, text, path, trim in todo:
         raw = f"{TMP}/{tag}.wav"
         samples, sr = k.create(text, voice=EN_VOICE, speed=EN_SPEED, lang=EN_LANG)
@@ -101,6 +105,7 @@ def build_en():
             samples = samples[c:].copy(); samples[:240] *= np.linspace(0, 1, 240)
         sf.write(raw, samples, sr)
         post_en(raw, path)
+        if NOCHECK: print(tag, text, sep=" | ", flush=True); continue
         s, _ = m.transcribe(load16(path), language="en"); t = " ".join(x.text for x in s).strip()
         sc = difflib.SequenceMatcher(None, norm(text), norm(t)).ratio()
         print(tag, round(sc, 2), t, "" if sc >= 0.9 else "  <-- CHECK", sep=" | ", flush=True)
