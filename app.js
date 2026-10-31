@@ -27,13 +27,19 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
 
   // ---------- items: every VI line and every EN line is its own quote ----------
   const ITEMS = [];
-  A.forEach((a, n) => { ITEMS.push({ n, lang: "vi", text: a.vi, own: a.group === "Của bạn" }); ITEMS.push({ n, lang: "en", text: a.en, own: a.group === "Của bạn" }); });
-  const fileOf = it => `audio/${it.lang}_${pad(it.n + 1)}.mp3`;
-  const allowed = it => state.lang === "both" || state.lang === it.lang;
-  $("total").textContent = ITEMS.length;
+  A.forEach((a, n) => { ITEMS.push({ n, lang: "vi", text: a.vi, own: a.group === "Của bạn", voice: true }); ITEMS.push({ n, lang: "en", text: a.en, own: a.group === "Của bạn", voice: true }); });
+  // Quote library (quotes.js): after the affirmations, so earlier indexes stay put. A quote joins the order only once its
+  // voice file exists (it.voice, from tools/build_quotes.py); each language of a quote is its own item, like the affirmations.
+  (window.QUOTES || []).forEach(q => ["vi", "en"].forEach(lang => {
+    if (q[lang]) ITEMS.push({ q: q.id, lang, text: q[lang], author: q.author, own: false, voice: (q.vo || []).includes(lang) });
+  }));
+  const fileOf = it => it.q ? `audio/q/${it.lang}_${it.q}.mp3` : `audio/${it.lang}_${pad(it.n + 1)}.mp3`;
+  const allowed = it => it.voice && (state.lang === "both" || state.lang === it.lang);
+  $("total").textContent = ITEMS.filter(it => it.voice).length;
   ITEMS.forEach((it, k) => {
     const li = document.createElement("li");
     li.dataset.lang = it.lang;
+    li.hidden = !it.voice;                         // quotes still waiting for a voice are kept in the list (same indexes) but not shown
     li.innerHTML = `<em class="tag">${it.lang === "vi" ? "VI" : "EN"}</em> ${it.text}`;
     li.onclick = () => {
       if (!allowed(it)) return;
@@ -330,7 +336,7 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
       $("lineVi").textContent = it.text; $("lineVi").lang = it.lang;
       $("lineVi").className = it.lang === "vi" ? "vi" : "vi is-en";
       $("lineTag").textContent = it.lang === "vi" ? "Tiếng Việt" : "English";
-      $("lineEn").textContent = "";
+      $("lineEn").textContent = it.author ? "— " + it.author : "";
       box.classList.remove("fade");
     }, 500);
     const k = ITEMS.indexOf(it);

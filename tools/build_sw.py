@@ -14,7 +14,7 @@ def stamp(m):
     f = m.group(2); v = hashlib.sha256(open(f, "rb").read()).hexdigest()[:8]
     stamped[f] = f"{f}?v={v}"
     return f'{m.group(1)}="{f}?v={v}"'
-html = re.sub(r'(src|href)="((?:affirmations|music|config|app|pwa)\.js|style\.css)(?:\?v=[0-9a-f]+)?"', stamp, html)
+html = re.sub(r'(src|href)="((?:affirmations|quotes|music|config|app|pwa)\.js|style\.css)(?:\?v=[0-9a-f]+)?"', stamp, html)
 if not META.search(html):
     html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="app-version" content="">', 1)
 assets = ["./"]
@@ -25,6 +25,7 @@ for dp, dns, fns in os.walk("."):
         p = os.path.join(dp, f)[2:]
         if f.startswith(".") or f in ("sw.js", "README.md") or p.endswith((".py", ".json")) and not p.endswith("manifest.webmanifest"):
             continue
+        if p.startswith("audio/q/"): continue   # quote voices (hundreds): not precached; the service worker keeps each one after its first play
         data = META.sub('<meta name="app-version" content="">', html).encode() if p == "index.html" else open(p, "rb").read()
         if p.startswith("audio/music/"):
             hm.update(p.encode()); hm.update(data)
