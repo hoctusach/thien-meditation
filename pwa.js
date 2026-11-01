@@ -249,6 +249,20 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   status();
   if (R.on) swReady.then(save);
 
+  // Android only: open the Clock app's "new alarm" screen with this time filled in (SET_ALARM intent link, needs a tap).
+  // An intent link can't carry the "repeat days" list, so the user turns on daily repeat in the Clock app.
+  const isAndroid = /android/i.test(ua);
+  const alarmUrl = (h, m, label) => "intent:#Intent;action=android.intent.action.SET_ALARM;" +
+    `i.android.intent.extra.alarm.HOUR=${h};i.android.intent.extra.alarm.MINUTES=${m};` +
+    `S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(label)};B.android.intent.extra.alarm.SKIP_UI=false;end`;
+  $("remAlarm").hidden = $("alarmHelp").hidden = !isAndroid;
+  $("remAlarm").onclick = () => {
+    const [h, m] = ($("remTime").value || "06:30").split(":").map(Number);
+    const a = document.createElement("a"); a.href = alarmUrl(h, m, "Đến giờ thiền");
+    document.body.appendChild(a); a.click(); a.remove();
+    $("remStatus").textContent = "⏰ Nếu app Đồng hồ không mở ra, hãy dùng “Thêm vào lịch” bên dưới.";
+  };
+
   // calendar fallback: a daily repeating event with an alarm, works on every phone
   $("remIcs").onclick = () => {
     const [h, m] = ($("remTime").value || "06:30").split(":").map(Number), d = new Date(); d.setHours(h, m, 0, 0);
