@@ -32,8 +32,9 @@ Trang web tĩnh (HTML/CSS/JS, không cần build).
 Trong app: “⏰ Nhắc nhở hằng ngày” → chọn giờ → bật. Có 4 lớp:
 1. **Mở app sau giờ nhắc** → hiện “Đến giờ thiền rồi” + 3 hồi “Chuông thiền” (`audio/bell5.mp3`, ~34s; bài thiền bắt đầu khi hồi cuối đang ngân). Luôn hoạt động.
 2. **📅 Thêm vào lịch** → file `.ics` lặp lại mỗi ngày có báo thức — cách chắc chắn nhất, dùng âm báo của lịch.
+2b. **⏰ Đặt báo thức (chỉ Android)** → nút mở app Đồng hồ với giờ đã chọn (intent `android.intent.action.SET_ALARM`, phải bấm một lần). Intent không mang được danh sách ngày lặp nên người dùng bật “lặp lại hằng ngày” trong app Đồng hồ. Nút ẩn trên iPhone/máy tính (web không tạo được báo thức ở đó). Chưa thử trên máy Android thật.
 3. **Nhắc nền Android** (Periodic Background Sync, chỉ khi đã cài app trên Chrome Android) — trình duyệt tự quyết định lúc chạy, không đúng giờ.
-4. **Thông báo đẩy (Web Push) miễn phí qua GitHub Actions** — `.github/workflows/daily-reminder.yml` chạy mỗi 10 phút và gửi thông báo cho những ai đã đến giờ.
+4. **Thông báo đẩy (Web Push) miễn phí qua GitHub Actions** — *(lưu ý: file `.github/workflows/daily-reminder.yml` hiện KHÔNG có trong repo nên lớp này chưa hoạt động; dự kiến thay bằng Cloudflare Worker)* `.github/workflows/daily-reminder.yml` chạy mỗi 10 phút và gửi thông báo cho những ai đã đến giờ.
    Cài một lần:
    - Repo → Settings → Secrets and variables → Actions → **New repository secret**
      - `VAPID_PRIVATE_KEY` = khoá bí mật VAPID (cặp với khoá công khai trong `config.js`).

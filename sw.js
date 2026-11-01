@@ -1,5 +1,5 @@
 // Service worker — offline cache + daily reminder notifications.
-const VERSION = "3f53b02e8f";
+const VERSION = "8630086ee5";
 const CACHE = "thien-" + VERSION;
 const ASSETS = [
  "./",
@@ -9,7 +9,7 @@ const ASSETS = [
  "index.html",
  "manifest.webmanifest",
  "music.js?v=20dcd443",
- "pwa.js?v=895aae9e",
+ "pwa.js?v=50e89923",
  "quotes.js?v=9df599bf",
  "style.css?v=f4275c4a",
  "audio/bell5.mp3",
