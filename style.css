@@ -80,9 +80,6 @@ details.panel[open]>summary{margin-bottom:6px}
 .vi.is-en{font-style:italic}
 .tagline{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);opacity:.75;margin:0 0 .6em;min-height:1em}
 .tag{font-style:normal;font-size:.68rem;letter-spacing:.08em;padding:1px 6px;border-radius:6px;background:rgba(243,217,164,.18);color:var(--gold);margin-right:4px;vertical-align:1px}
-#allLines li[data-lang="en"]{color:var(--muted);font-style:italic}
-#allLines li.off{opacity:.35;cursor:default}
-#allLines li.cur{color:var(--gold)}
 
 /* ---------- themes (crossfading background layers) ---------- */
 @property --b1 { syntax: "<color>"; inherits: true; initial-value: #e7a6c8; }

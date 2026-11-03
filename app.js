@@ -1,6 +1,19 @@
 window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html checks all 5 scripts are this version or newer)
 (() => {
-  const A = window.AFFIRMATIONS || [];
+  // Lines + voice file names come from d.js as one opaque string (tools/data.py); decode it once and drop the global.
+  const K = 0x5A1C3E97;   // pairs with K in tools/data.py
+  const D = (() => {
+    const s = window.__d; delete window.__d;
+    try {
+      const r = atob(s), u = new Uint8Array(r.length - 4);
+      let x = (K ^ (r.charCodeAt(0) << 24 | r.charCodeAt(1) << 16 | r.charCodeAt(2) << 8 | r.charCodeAt(3))) >>> 0, w = 0, c = 0;
+      for (let i = 0; i < u.length; i++) {
+        if (!c) { x = (x + 0x6D2B79F5) >>> 0; let t = Math.imul(x ^ x >>> 15, x | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); w = (t ^ t >>> 14) >>> 0; c = 4; }
+        u[i] = r.charCodeAt(i + 4) ^ (w & 255); w >>>= 8; c--;
+      }
+      return JSON.parse(new TextDecoder().decode(u));
+    } catch (e) { return { affirmations: [], quotes: [], files: {} }; }
+  })();
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2, "0");
   const state = { mode: "thien", breathPat: "478", lang: "both", dur: 0, tone: 432, bell: 5, lastBell: 0, gap: 40, auto: true, playing: false, idx: 0, order: [], elapsed: 0, token: 0, session: null, goalNoted: false };
@@ -26,35 +39,20 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
   });
 
   // ---------- items: every VI line and every EN line is its own quote ----------
+  // Affirmations first, then the quote library, so earlier indexes stay put. A line is in the play order only when it has a voice file.
   const ITEMS = [];
-  A.forEach((a, n) => { ITEMS.push({ n, lang: "vi", text: a.vi, voice: true }); ITEMS.push({ n, lang: "en", text: a.en, voice: true }); });
-  // Quote library (quotes.js): after the affirmations, so earlier indexes stay put. A quote joins the order only once its
-  // voice file exists (it.voice, from tools/build_quotes.py); each language of a quote is its own item, like the affirmations.
-  (window.QUOTES || []).forEach(q => ["vi", "en"].forEach(lang => {
-    if (q[lang]) ITEMS.push({ q: q.id, lang, text: q[lang], author: q.author, voice: (q.vo || []).includes(lang) });
+  D.affirmations.forEach((a, n) => ["vi", "en"].forEach(lang => { const file = D.files[`a|${lang}|${n}`]; ITEMS.push({ lang, text: a[lang], file, voice: !!file }); }));
+  D.quotes.forEach(q => ["vi", "en"].forEach(lang => {
+    if (q[lang]) { const file = D.files[`q|${lang}|${q.id}`]; ITEMS.push({ q: 1, lang, text: q[lang], author: q.author, file, voice: !!file }); }
   }));
-  const fileOf = it => it.q ? `audio/q/${it.lang}_${it.q}.mp3` : `audio/${it.lang}_${pad(it.n + 1)}.mp3`;
+  const fileOf = it => `audio/${it.q ? "q" : "a"}/${it.file}.mp3`;
   const allowed = it => it.voice && (state.lang === "both" || state.lang === it.lang);
-  $("total").textContent = ITEMS.filter(it => it.voice).length;
-  ITEMS.forEach((it, k) => {
-    const li = document.createElement("li");
-    li.dataset.lang = it.lang;
-    li.hidden = !it.voice;                         // quotes still waiting for a voice are kept in the list (same indexes) but not shown
-    li.innerHTML = `<em class="tag">${it.lang === "vi" ? "VI" : "EN"}</em> ${it.text}`;
-    li.onclick = () => {
-      if (!allowed(it)) return;
-      state.idx = Math.max(0, state.order.indexOf(k));
-      if (!state.playing) start(); else { state.token++; runLoop(); }
-    };
-    $("allLines").appendChild(li);
-  });
   const makeOrder = () => {
     let ord = ITEMS.map((_, k) => k).filter(k => allowed(ITEMS[k]));
     if ($("shuffle").checked) {
       for (let i = ord.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ord[i], ord[j]] = [ord[j], ord[i]]; }   // every line, affirmations and quotes alike
     }
     state.order = ord;
-    document.querySelectorAll("#allLines li").forEach((li, k) => li.classList.toggle("off", !allowed(ITEMS[k])));
   };
 
   // ---------- progress: which quote this device reached (by quote text, so edits to the list don't break it) ----------
@@ -337,8 +335,6 @@ window.__thienJS = (window.__thienJS || 0) + 1;   // load marker (index.html che
       $("lineEn").textContent = it.author ? "— " + it.author : "";
       box.classList.remove("fade");
     }, 500);
-    const k = ITEMS.indexOf(it);
-    document.querySelectorAll("#allLines li").forEach((li, i) => li.classList.toggle("cur", i === k));
   }
   // The bell has 3 strikes (0 s, 10 s, 20 s); speech waits until the last strike has rung out a little.
   const BELL_CLEAR_MS = 23000;
