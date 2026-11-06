@@ -1,0 +1,1 @@
+window.__thienJS=(window.__thienJS||0)+1,window.CLOUD_CONFIG={url:"",anonKey:"",statsDefault:!0},window.PUSH_CONFIG={vapidPublicKey:"BGRi1zX7nhchTv09CD9_1z0MNrLkbsopIuJYOfb1JwtO_zeKWiDbqHd9-nnIACeVsHXrKqxJrgZRzBI6DGgclAI"};
