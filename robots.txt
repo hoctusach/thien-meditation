@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hoctusach.github.io/thien-meditation/sitemap.xml
